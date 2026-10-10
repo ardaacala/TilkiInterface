@@ -1,10 +1,10 @@
-# TilkiInterface
+# TilkiStatsHUD
 
 TilkiCraft logosu ve turuncu/koyu kahve temasıyla Spigot **1.21.4**, Java **21** için oyuncu paneli ve ESC kaynak paketi.
 
 ## Kurulum
 
-1. Sunucuyu durdur, `TilkiInterface-1.0.0.jar` dosyasını `plugins` klasörüne koy ve yeniden başlat.
+1. Sunucuyu durdur, eski `TilkiInterface-1.0.0.jar` varsa kaldır, `TilkiStatsHUD-1.0.0.jar` dosyasını `plugins` klasörüne koy ve yeniden başlat. Eski özel ayarları kullanmak için `plugins/TilkiInterface/config.yml` dosyasını `plugins/TilkiStatsHUD/config.yml` yoluna kopyala. Kaynak paketi bağlantısı aynı kalır.
 2. Oyuncu kaynak paketini kabul eder. ZIP GitHub'dan otomatik indirilir; sunucu klasörüne ZIP koymak gerekmez.
 3. AuthMe varsa panel yalnızca başarılı girişten sonra açılır. AuthMe yoksa normal açılır.
 4. `/tilkiui` veya `/istatistik`: paneli/üst şeridi aç-kapat. `/tilkiui reload`: yönetici ayar yenileme.

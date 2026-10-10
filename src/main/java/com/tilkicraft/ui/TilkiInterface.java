@@ -195,7 +195,7 @@ public final class TilkiInterface extends JavaPlugin implements Listener, Comman
             for (Player player:Bukkit.getOnlinePlayers()) remove(player);
             reloadConfig(); bindHooks(); readPack(); ready.clear();
             for (Player player:Bukkit.getOnlinePlayers()) requestPack(player);
-            sender.sendMessage("TilkiInterface ayarları yenilendi."); return true;
+            sender.sendMessage("TilkiStatsHUD ayarları yenilendi."); return true;
         }
         if (sender instanceof Player player) {
             if (!hidden.add(player.getUniqueId())) hidden.remove(player.getUniqueId());
