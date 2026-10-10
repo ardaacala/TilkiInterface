@@ -30,7 +30,7 @@ public final class TilkiInterface extends JavaPlugin implements Listener, Comman
         final BossBar bar;
         final String previousHeader, previousFooter;
         String lastHeader, lastFooter;
-        Panel(Player player, boolean sidebar) {
+        Panel(Player player, boolean sidebar, int count) {
             previousHeader=player.getPlayerListHeader(); previousFooter=player.getPlayerListFooter();
             previous = player.getScoreboard();
             board = sidebar ? Bukkit.getScoreboardManager().getNewScoreboard() : null;
@@ -39,11 +39,11 @@ public final class TilkiInterface extends JavaPlugin implements Listener, Comman
             if (sidebar) {
                 objective.setDisplaySlot(DisplaySlot.SIDEBAR);
                 hideNumbers(objective);
-                for (int i=0;i<15;i++) {
+                for (int i=0;i<count;i++) {
                     Team row = board.registerNewTeam("tilki_"+i);
                     String entry = ChatColor.values()[i].toString()+ChatColor.RESET;
                     row.addEntry(entry);
-                    objective.getScore(entry).setScore(15-i);
+                    objective.getScore(entry).setScore(count-i);
                     rows.add(row);
                 }
                 player.setScoreboard(board);
@@ -111,9 +111,22 @@ public final class TilkiInterface extends JavaPlugin implements Listener, Comman
         } catch (ReflectiveOperationException ex) { getLogger().warning("Vault rank hook unavailable."); }
     }
     private void readPack() {
-        if (getConfig().getString("pack.url","").equals("https://github.com/ardaacala/TilkiInterface/releases/download/v1.0.0/TilkiInterface-ResourcePack.zip")) {
-            getConfig().set("pack.url","https://github.com/ardaacala/TilkiInterface/releases/download/v1.1.0/TilkiInterface-ResourcePack.zip");
-            getConfig().set("pack.sha1","181c062fe58db932ab49dffbe0b1049166dfed10"); saveConfig();
+        if (!getConfig().getBoolean("layout.compact-v2",false)) {
+            List<String> lines=new ArrayList<>(getConfig().getStringList("sidebar.lines"));
+            lines.removeIf(line->line.contains("{kills}") || line.contains("{deaths}"));
+            String[] keys={"online","ping","player","rank","money","level","playtime"};
+            String[] icons={"online","ping","player","rank","money","island","time"};
+            for(int i=0;i<lines.size();i++) {
+                String line=lines.get(i).replace("&e{player}","&f{player}").replace("{level}","{island-level}").replace("&fSeviye","&fAda Seviyesi");
+                for(int k=0;k<keys.length;k++) if(line.contains("{"+(keys[k].equals("level")?"island-level":keys[k])+"}")) line=line.replaceFirst("^&6[●◆✦] ","{icon-"+icons[k]+"} ");
+                lines.set(i,line);
+            }
+            getConfig().set("sidebar.lines",lines); getConfig().set("layout.compact-v2",true); saveConfig();
+        }
+        String previousUrl=getConfig().getString("pack.url","");
+        if (previousUrl.equals("https://github.com/ardaacala/TilkiInterface/releases/download/v1.0.0/TilkiInterface-ResourcePack.zip") || previousUrl.equals("https://github.com/ardaacala/TilkiInterface/releases/download/v1.1.0/TilkiInterface-ResourcePack.zip")) {
+            getConfig().set("pack.url","https://github.com/ardaacala/TilkiInterface/releases/download/v1.2.0/TilkiInterface-ResourcePack.zip");
+            getConfig().set("pack.sha1","0d44a229df817295ac380a4e191d6b5e9f1b838a"); saveConfig();
         }
         url=getConfig().getString("pack.url","").trim(); hash=null;
         if (url.isEmpty()) return;
@@ -177,6 +190,9 @@ public final class TilkiInterface extends JavaPlugin implements Listener, Comman
         data.put("playtime",UiText.duration(player.getStatistic(Statistic.PLAY_ONE_MINUTE)));
         data.put("island",expand(player,getConfig().getString("sidebar.island-placeholder"),"—"));
         data.put("date",DATE.format(Instant.now())); data.put("footer",getConfig().getString("sidebar.footer","TilkiCraft"));
+        data.put("island-level",expand(player,getConfig().getString("island-level.placeholder","%superior_island_level_format%"),"0"));
+        String[] icons={"online","ping","player","rank","money","island","time"};
+        for(int i=0;i<icons.length;i++) data.put("icon-"+icons[i],ready.contains(player.getUniqueId())?"§f"+(char)(0xea20+i):"&6◆");
         return data;
     }
     private String render(Player player,String text,Map<String,String> values) {
@@ -192,23 +208,33 @@ public final class TilkiInterface extends JavaPlugin implements Listener, Comman
             if (panel==null) {
                 boolean sidebar=getConfig().getBoolean("sidebar.enabled",true);
                 if (getConfig().getBoolean("sidebar.respect-existing",true) && player.getScoreboard().getObjective(DisplaySlot.SIDEBAR)!=null) sidebar=false;
-                panel=new Panel(player,sidebar); panels.put(id,panel);
+                panel=new Panel(player,sidebar,Math.min(13,getConfig().getStringList("sidebar.lines").size())); panels.put(id,panel);
             }
             Map<String,String> values=values(player);
             boolean framed=ready.contains(id) && getConfig().getBoolean("sidebar.frame",true);
             if (getConfig().getBoolean("tab.enabled",true)) {
                 values.put("tab-logo",ready.contains(id)?"\n\n\n\uEA02\n":"&6&lTILKICRAFT");
+                List<? extends Player> visible=Bukkit.getOnlinePlayers().stream().filter(player::canSee).toList();
+                int players=Math.max(1,Math.min(80,visible.size())), columns=(players+19)/20, rows=(players+columns-1)/columns;
+                int longest=visible.stream().mapToInt(p->UiText.tabNameWidth(p.getPlayerListName())).max().orElse(120);
+                int width=Math.max(192,Math.min(768,((columns*(longest+24)+63)/64)*64)), variant=(width-192)/64;
+                values.put("tab-frame",ready.contains(id)?"§f"+(char)(0xec00+variant*20+rows-1):"&6━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+                values.put("tab-bottom",ready.contains(id)?"§f"+(char)(0xed00+variant):"&6━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
                 String header=String.join("\n",getConfig().getStringList("tab.header"));
                 String footer=String.join("\n",getConfig().getStringList("tab.footer"));
-                if (header.isEmpty()) header="{tab-logo}\n&6━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n&6&lTILKICRAFT &8┃ &f{online}/{max}\n";
-                if (footer.isEmpty()) footer="\n&6━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n&7Oyuncu: &f{player} &8┃ &7Ping: &f{ping} ms\n&6{rank} &8┃ &fTilkiCraft";
+                if (header.isEmpty()) header="{tab-logo}\n{tab-frame}\n&6&lTILKICRAFT &8┃ &f{online}/{max}\n";
+                if (footer.isEmpty()) footer="\n&7Oyuncu: &f{player} &8┃ &7Ping: &f{ping} ms\n&6{rank} &8┃ &fTilkiCraft\n{tab-bottom}";
                 panel.lastHeader=render(player,header,values); panel.lastFooter=render(player,footer,values);
                 player.setPlayerListHeaderFooter(panel.lastHeader,panel.lastFooter);
             }
             if (panel.objective!=null) {
-                panel.objective.setDisplayName(ready.contains(id)?(framed?"§f\uEA03\uEA04\uEA05\uEA01\uEA05":"\uEA01"):render(player,getConfig().getString("sidebar.title","TilkiCraft"),values));
                 List<String> lines=getConfig().getStringList("sidebar.lines");
-                for (int i=0;i<15;i++) panel.rows.get(i).setPrefix((framed?"\uEA07":"")+(i<lines.size()?render(player,lines.get(i),values):""));
+                int widest=lines.stream().map(line->render(player,line,values)).mapToInt(UiText::tabNameWidth).max().orElse(100)+12;
+                int style=widest<=128?0:widest<=144?1:widest<=160?2:3;
+                char[] frames={'\uEA03','\uEA10','\uEA11','\uEA12'}, rewind={'\uEA04','\uEA13','\uEA15','\uEA17'}, center={'\uEA05','\uEA14','\uEA16','\uEA18'};
+                String heading="§f"+frames[style]+rewind[style]+center[style]+"\uEA01"+center[style];
+                panel.objective.setDisplayName(ready.contains(id)?(framed?heading:"\uEA01"):render(player,getConfig().getString("sidebar.title","TilkiCraft"),values));
+                for (int i=0;i<panel.rows.size();i++) panel.rows.get(i).setPrefix((framed?"\uEA07":"")+(i<lines.size()?render(player,lines.get(i),values):""));
             }
             panel.bar.setVisible(getConfig().getBoolean("top-bar.enabled",true));
             panel.bar.setTitle(render(player,getConfig().getString("top-bar.text","TilkiCraft"),values));

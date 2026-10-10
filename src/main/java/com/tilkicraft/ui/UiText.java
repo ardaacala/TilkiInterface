@@ -3,6 +3,15 @@ import java.util.Locale;
 
 public final class UiText {
     private UiText() {}
+    public static int tabNameWidth(String name) {
+        name=org.bukkit.ChatColor.stripColor(name); int width=0;
+        for(char c:name.toCharArray()) {
+            if(c>=0xeb00 && c<=0xeb10) { width+=new int[]{55,53,37,49,53,54,36,48,48,47,48,73,35,41,61,67,38}[c-0xeb00]; continue; }
+            if(c>=0xea20 && c<=0xea26) { width+=9; continue; }
+            width+=switch(c) {case ' ', 'I', 't' -> 4;case 'i','!', '.',',',':',';' -> 2;case 'l','\'' -> 3;default -> 6;};
+        }
+        return width;
+    }
     public static String compact(double value) {
         if (!Double.isFinite(value)) return "—";
         double amount = Math.abs(value);

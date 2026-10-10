@@ -1,0 +1,5 @@
+Tool: built-in image_gen (imagegen skill), transparent_background=true.
+Input: ../CombatGuns/tilkicraft_logo.png
+Saved project asset: art/tilki-mascot.png
+Prompt:
+Use case: background-extraction. Edit target: the supplied TilkiCraft logo. Extract only its orange Minecraft voxel fox mascot (head, ears, fluffy tail and visible upper body/paws), removing all TilkiCraft lettering, grass and dirt block decorations. Keep the fox's face, expression, colors, voxel style and pose as close to the original as possible. Finish the small lower outline cleanly where the lettering overlapped the paws. Center tightly in a square transparent canvas with a thin orange/black outline consistent with the original. No words or lettering, no new accessories, no background. Intended use: a very small Minecraft sidebar header icon.

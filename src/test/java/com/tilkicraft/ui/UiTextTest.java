@@ -26,4 +26,9 @@ class UiTextTest {
         assertTrue(UiText.unresolved(""));
         assertFalse(UiText.unresolved("VIP"));
     }
+    @Test void tabFrameWidthAccountsForBadgesAndIgnoresColorCodes() {
+        assertEquals(UiText.tabNameWidth("Arda"),UiText.tabNameWidth("§fArda"));
+        assertTrue(UiText.tabNameWidth("\uEB10 Arda")>UiText.tabNameWidth("Arda"));
+        assertTrue(UiText.tabNameWidth("WWWW")>UiText.tabNameWidth("iiii"));
+    }
 }
