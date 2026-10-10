@@ -4,7 +4,7 @@ TilkiCraft logosu ve turuncu/koyu kahve temasıyla Spigot **1.21.4**, Java **21*
 
 ## Kurulum
 
-1. Sunucuyu durdur, eski `TilkiInterface-1.0.0.jar` varsa kaldır, `TilkiStatsHUD-1.0.1.jar` dosyasını `plugins` klasörüne koy ve yeniden başlat. Eski özel ayarları kullanmak için `plugins/TilkiInterface/config.yml` dosyasını `plugins/TilkiStatsHUD/config.yml` yoluna kopyala. Kaynak paketi bağlantısı aynı kalır.
+1. Sunucuyu durdur, eski `TilkiInterface-1.0.0.jar` varsa kaldır, `TilkiStatsHUD-1.2.0.jar` dosyasını `plugins` klasörüne koy ve yeniden başlat. Eski özel ayarları kullanmak için `plugins/TilkiInterface/config.yml` dosyasını `plugins/TilkiStatsHUD/config.yml` yoluna kopyala. Resmî eski kaynak paketi bağlantısı otomatik güncellenir.
 2. Oyuncu kaynak paketini kabul eder. ZIP GitHub'dan otomatik indirilir; sunucu klasörüne ZIP koymak gerekmez.
 3. AuthMe varsa panel yalnızca başarılı girişten sonra açılır. AuthMe yoksa normal açılır.
 4. `/tilkiui` veya `/istatistik`: paneli/üst şeridi aç-kapat. `/tilkiui reload`: yönetici ayar yenileme.
@@ -13,11 +13,11 @@ Paket: https://github.com/ardaacala/TilkiInterface/releases/tag/v1.0.0
 
 ## Gösterilen bilgiler
 
-Çevrimiçi sayısı, kapasite, ping, ad, rütbe, Vault bakiyesi, Minecraft XP seviyesi, oyuncu öldürme/ölüm sayısı ve Minecraft'ın kaydettiği toplam oyun süresi. Tarih Europe/Istanbul saat dilimini kullanır.
+Çevrimiçi sayısı, kapasite, ping, beyaz oyuncu adı, rütbe rozeti, Vault bakiyesi, PlaceholderAPI üzerinden ada seviyesi ve Minecraft'ın kaydettiği toplam oyun süresi. Tarih Europe/Istanbul saat dilimini kullanır.
 
 Vault ve ekonomi sağlayıcısı (ör. EssentialsX) varsa gerçek bakiye okunur. LuckPerms'in Vault Chat sağlayıcısı üzerinden prefix veya ana grup gösterilir. PlaceholderAPI `%luckperms_prefix%` çözerse o tercih edilir. Sağlayıcı yoksa bakiye `—`, rütbe ayarlardaki varsayılan olur. Uydurma bakiye/veri kullanılmaz.
 
-Ada seviyesi için `sidebar.island-placeholder` alanına kurulu SuperiorSkyblock/PAPI expansion'ının desteklediği placeholder'ı yazıp satırlardan birine `{island}` ekle. XP seviyesi ada seviyesi değildir. Oy partisi veya etkinlik sayacı için bir veri kaynağı verilmediğinden bunlar eklenmedi. Satırlar başka PAPI placeholder'ları da kabul eder; en fazla 15 satır gösterilir.
+Ada seviyesi varsayılan olarak `%superior_island_level_format%` ile okunur. `island-level.placeholder` değiştirilebilir; HUD satırında `{island-level}` kullanılır. PlaceholderAPI ve SuperiorSkyblock2 kurulu olmalıdır. Oy partisi veya etkinlik sayacı için bir veri kaynağı verilmediğinden bunlar eklenmedi. Satırlar başka PAPI placeholder'ları da kabul eder; en fazla 13 satır gösterilir.
 
 ## ESC ekranı
 
@@ -50,3 +50,8 @@ GUI sprite bilgisi: https://www.minecraft.net/nb-no/article/minecraft-java-editi
 ## 1.0.1 — TilkiTags rozet bağlantısı
 
 TilkiTags 1.1.0 kuruluysa sidebar ve üst şerit `{rank}` alanında aynı tek parça görsel rozet gösterilir. `sidebar.use-tilkitags` varsayılan true'dur; eski config dosyasında alanın bulunması gerekmez. Oyuncu tag paketini henüz yüklemediyse metin fallback'i gösterilir. TilkiTags yoksa/eskise/devre dışıysa önceki Vault/PAPI davranışı devam eder. HUD kaynak paketi değişmedi; yalnızca JAR güncellemesi gerekir. Toplam 4 test geçti; canlı sunucuda görüntü henüz denenmedi.
+## 1.2.0 — Kompakt HUD ve TAB çerçevesi
+
+HUD metne göre 128–192 piksel genişlik seçer. Ölüm/öldürme satırları kaldırılır; kalan satırlarda özgün piksel simgeler görünür. Sidebar yalnız tilki maskotunu, TAB/ESC tam logoyu gösterir. Maskot `art/tilki-mascot.png`; imagegen yerleşik aracı ile uygulanan istem `art/mascot-prompt.txt` dosyasındadır.
+
+TAB çerçevesi görünür oyuncu sayısına ve isim genişliğine göre 200 bitmap varyantından seçilir. Küçük pencere veya yüksek GUI ölçeğinde kırpılma olabilir; oyun içi doğrulama gereklidir. Tam güncelleme: https://github.com/ardaacala/TilkiResourcePack/releases/tag/v1.0.1
