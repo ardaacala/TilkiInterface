@@ -1,0 +1,35 @@
+sidebar:
+  enabled: true
+  # Başka bir pluginin sidebar'ı varsa zorla değiştirme.
+  respect-existing: true
+  title: '&6&lTILKI&f&lCRAFT'
+  footer: '&6TilkiCraft &8• &fSkyblock'
+  rank-placeholder: '%luckperms_prefix%'
+  rank-fallback: '&fOyuncu'
+  # İstersen örn. %superior_island_level% yaz; ilgili PAPI expansion gerekir.
+  island-placeholder: ''
+  lines:
+    - '&8{date}'
+    - ' '
+    - '&6● &fÇevrimiçi &7» &e{online}/{max}'
+    - '&6● &fPing &7» &e{ping} ms'
+    - ' '
+    - '&6◆ &fOyuncu &7» &e{player}'
+    - '&6◆ &fRütbe &7» {rank}'
+    - '&6◆ &fBakiye &7» &e{money}'
+    - '&6◆ &fSeviye &7» &e{level}'
+    - ' '
+    - '&6✦ &fÖldürme &7» &e{kills}'
+    - '&6✦ &fÖlüm &7» &e{deaths}'
+    - '&6✦ &fSüre &7» &e{playtime}'
+    - ' '
+    - '{footer}'
+top-bar:
+  enabled: true
+  text: '&6◆ &f{money} &8┃ {rank} &8┃ &6TilkiCraft &8┃ &f{online}/{max}'
+pack:
+  url: 'https://github.com/ardaacala/TilkiInterface/releases/download/v1.0.0/TilkiInterface-ResourcePack.zip'
+  sha1: 'c9171d00522572515831997e73d8a92ff687ea38'
+  required: false
+  delay-ticks: 100
+  prompt: 'TilkiCraft logo ve menü temasını yükle.'

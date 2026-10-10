@@ -1,0 +1,4 @@
+{"providers":[
+  {"type":"bitmap","file":"tilkiinterface:font/logo.png","height":64,"ascent":44,"chars":[""]},
+  {"type":"bitmap","file":"tilkiinterface:font/logo.png","height":28,"ascent":28,"chars":[""]}
+]}
