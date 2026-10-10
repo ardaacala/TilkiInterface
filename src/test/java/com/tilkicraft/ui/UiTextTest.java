@@ -3,6 +3,14 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class UiTextTest {
+    public static class BadgeProvider {
+        public String getRankBadge(org.bukkit.entity.Player subject,org.bukkit.entity.Player viewer) { return "\uEB10"; }
+    }
+    @Test void usesTagPluginBadgeAndFallsBackForOlderOrMissingProviders() {
+        assertEquals("\uEB10",UiText.rankBadge(new BadgeProvider(),null));
+        assertNull(UiText.rankBadge(new Object(),null));
+        assertNull(UiText.rankBadge(null,null));
+    }
     @Test void formatsEconomyValuesWithoutLocaleDependence() {
         assertEquals("1.4M",UiText.compact(1_400_000));
         assertEquals("-1.2K",UiText.compact(-1200));

@@ -1,5 +1,6 @@
 sidebar:
   enabled: true
+  use-tilkitags: true
   # Başka bir pluginin sidebar'ı varsa zorla değiştirme.
   respect-existing: true
   title: '&6&lTILKI&f&lCRAFT'

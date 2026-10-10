@@ -157,6 +157,13 @@ public final class TilkiInterface extends JavaPlugin implements Listener, Comman
             else if (group!=null && !group.isBlank()) rank=group;
         } catch (ReflectiveOperationException ignored) { }
         data.put("rank",expand(player,getConfig().getString("sidebar.rank-placeholder"),rank));
+        if (getConfig().getBoolean("sidebar.use-tilkitags",true)) {
+            var tags=Bukkit.getPluginManager().getPlugin("TilkiTags");
+            if (tags!=null && tags.isEnabled()) {
+                String badge=UiText.rankBadge(tags,player);
+                if (badge!=null) data.put("rank",badge);
+            }
+        }
         data.put("level",""+player.getLevel()); data.put("kills",""+player.getStatistic(Statistic.PLAYER_KILLS)); data.put("deaths",""+player.getStatistic(Statistic.DEATHS));
         data.put("playtime",UiText.duration(player.getStatistic(Statistic.PLAY_ONE_MINUTE)));
         data.put("island",expand(player,getConfig().getString("sidebar.island-placeholder"),"—"));

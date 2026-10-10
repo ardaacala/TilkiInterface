@@ -4,7 +4,7 @@ TilkiCraft logosu ve turuncu/koyu kahve temasıyla Spigot **1.21.4**, Java **21*
 
 ## Kurulum
 
-1. Sunucuyu durdur, eski `TilkiInterface-1.0.0.jar` varsa kaldır, `TilkiStatsHUD-1.0.0.jar` dosyasını `plugins` klasörüne koy ve yeniden başlat. Eski özel ayarları kullanmak için `plugins/TilkiInterface/config.yml` dosyasını `plugins/TilkiStatsHUD/config.yml` yoluna kopyala. Kaynak paketi bağlantısı aynı kalır.
+1. Sunucuyu durdur, eski `TilkiInterface-1.0.0.jar` varsa kaldır, `TilkiStatsHUD-1.0.1.jar` dosyasını `plugins` klasörüne koy ve yeniden başlat. Eski özel ayarları kullanmak için `plugins/TilkiInterface/config.yml` dosyasını `plugins/TilkiStatsHUD/config.yml` yoluna kopyala. Kaynak paketi bağlantısı aynı kalır.
 2. Oyuncu kaynak paketini kabul eder. ZIP GitHub'dan otomatik indirilir; sunucu klasörüne ZIP koymak gerekmez.
 3. AuthMe varsa panel yalnızca başarılı girişten sonra açılır. AuthMe yoksa normal açılır.
 4. `/tilkiui` veya `/istatistik`: paneli/üst şeridi aç-kapat. `/tilkiui reload`: yönetici ayar yenileme.
@@ -46,3 +46,7 @@ Derleme, sayı/süre/placeholder testleri, font boyutları, dil JSON'ları, GUI 
 Canlı kontrol: kayıt/giriş öncesinde panel yok, giriş sonrasında panel var; bakiye ve rütbe gerçek; paket reddi durumunda metin başlık; Unicode açık/kapalı; farklı GUI ölçeklerinde ESC; CombatGuns scope ve giriş logosu; diğer scoreboard pluginiyle birlikte davranış; `/tilkiui` ve `/tilkiui reload`.
 
 GUI sprite bilgisi: https://www.minecraft.net/nb-no/article/minecraft-java-edition-1-20-2
+
+## 1.0.1 — TilkiTags rozet bağlantısı
+
+TilkiTags 1.1.0 kuruluysa sidebar ve üst şerit `{rank}` alanında aynı tek parça görsel rozet gösterilir. `sidebar.use-tilkitags` varsayılan true'dur; eski config dosyasında alanın bulunması gerekmez. Oyuncu tag paketini henüz yüklemediyse metin fallback'i gösterilir. TilkiTags yoksa/eskise/devre dışıysa önceki Vault/PAPI davranışı devam eder. HUD kaynak paketi değişmedi; yalnızca JAR güncellemesi gerekir. Toplam 4 test geçti; canlı sunucuda görüntü henüz denenmedi.
