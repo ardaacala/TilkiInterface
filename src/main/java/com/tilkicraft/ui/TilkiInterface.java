@@ -23,6 +23,7 @@ public final class TilkiInterface extends JavaPlugin implements Listener, Comman
     private String url;
     private byte[] hash;
     private boolean authRequired;
+    private final Properties frameLayouts=new Properties();
     private static final class Panel {
         final Scoreboard previous, board;
         final Objective objective;
@@ -50,17 +51,8 @@ public final class TilkiInterface extends JavaPlugin implements Listener, Comman
             }
             bar.addPlayer(player);
         }
-        // Spigot lacks a public number-format API. Use it when this server exposes it.
         static void hideNumbers(Objective objective) {
-            try {
-                Object handle = objective.getClass().getMethod("getHandle").invoke(objective);
-                Class<?> blank = Class.forName("net.minecraft.network.chat.numbers.BlankFormat");
-                Object format = null;
-                for (Field field : blank.getFields()) if (Modifier.isStatic(field.getModifiers()) && blank.isAssignableFrom(field.getType())) { format=field.get(null); break; }
-                if (format == null) return;
-                for (Method method : handle.getClass().getMethods())
-                    if (method.getParameterCount()==1 && method.getParameterTypes()[0].isInstance(format) && method.getReturnType()==void.class) { method.invoke(handle,format); return; }
-            } catch (ReflectiveOperationException | RuntimeException ignored) { }
+            if (!ScoreNumbers.hide(objective)) Bukkit.getLogger().warning("[TilkiStatsHUD] Score number format could not be hidden on this server build.");
         }
         void close(Player player) {
             bar.removeAll();
@@ -70,6 +62,8 @@ public final class TilkiInterface extends JavaPlugin implements Listener, Comman
     }
     @Override public void onEnable() {
         saveDefaultConfig();
+        try(var input=getResource("frame-layouts.properties")) { frameLayouts.load(input); }
+        catch(Exception ex) { getLogger().severe("HD frame layouts could not be loaded: "+ex.getMessage()); }
         bindHooks();
         Bukkit.getScheduler().runTask(this,this::bindHooks);
         readPack();
@@ -124,9 +118,9 @@ public final class TilkiInterface extends JavaPlugin implements Listener, Comman
             getConfig().set("sidebar.lines",lines); getConfig().set("layout.compact-v2",true); saveConfig();
         }
         String previousUrl=getConfig().getString("pack.url","");
-        if (previousUrl.equals("https://github.com/ardaacala/TilkiInterface/releases/download/v1.0.0/TilkiInterface-ResourcePack.zip") || previousUrl.equals("https://github.com/ardaacala/TilkiInterface/releases/download/v1.1.0/TilkiInterface-ResourcePack.zip")) {
-            getConfig().set("pack.url","https://github.com/ardaacala/TilkiInterface/releases/download/v1.2.0/TilkiInterface-ResourcePack.zip");
-            getConfig().set("pack.sha1","0d44a229df817295ac380a4e191d6b5e9f1b838a"); saveConfig();
+        if (previousUrl.startsWith("https://github.com/ardaacala/TilkiInterface/releases/download/") && !previousUrl.contains("/v1.3.0/")) {
+            getConfig().set("pack.url","https://github.com/ardaacala/TilkiInterface/releases/download/v1.3.0/TilkiInterface-ResourcePack.zip");
+            getConfig().set("pack.sha1","9a393eab0d46933bac62c3a3a0efb9f15b9fc79f"); saveConfig();
         }
         url=getConfig().getString("pack.url","").trim(); hash=null;
         if (url.isEmpty()) return;
@@ -200,6 +194,7 @@ public final class TilkiInterface extends JavaPlugin implements Listener, Comman
         return ChatColor.translateAlternateColorCodes('&',expand(player,text,text));
     }
     private void refresh() {
+        UiText.fontStyle(SharedPack.active()?SharedPack.fontStyle():getConfig().getString("font-style","modern"));
         for (Player player:Bukkit.getOnlinePlayers()) {
             UUID id=player.getUniqueId();
             if (!loggedIn(player) || hidden.contains(id)) { remove(player); continue; }
@@ -218,8 +213,8 @@ public final class TilkiInterface extends JavaPlugin implements Listener, Comman
                 int players=Math.max(1,Math.min(80,visible.size())), columns=(players+19)/20, rows=(players+columns-1)/columns;
                 int longest=visible.stream().mapToInt(p->UiText.tabNameWidth(p.getPlayerListName())).max().orElse(120);
                 int width=Math.max(192,Math.min(768,((columns*(longest+24)+63)/64)*64)), variant=(width-192)/64;
-                values.put("tab-frame",ready.contains(id)?"§f"+(char)(0xec00+variant*20+rows-1):"&6━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-                values.put("tab-bottom",ready.contains(id)?"§f"+(char)(0xed00+variant):"&6━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+                values.put("tab-frame",ready.contains(id)?"§f"+frameLayouts.getProperty("tab."+variant+"."+rows,""):"&6━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+                values.put("tab-bottom",ready.contains(id)?"§f"+frameLayouts.getProperty("bottom."+variant,""):"&6━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
                 String header=String.join("\n",getConfig().getStringList("tab.header"));
                 String footer=String.join("\n",getConfig().getStringList("tab.footer"));
                 if (header.isEmpty()) header="{tab-logo}\n{tab-frame}\n&6&lTILKICRAFT &8┃ &f{online}/{max}\n";
@@ -229,12 +224,18 @@ public final class TilkiInterface extends JavaPlugin implements Listener, Comman
             }
             if (panel.objective!=null) {
                 List<String> lines=getConfig().getStringList("sidebar.lines");
-                int widest=lines.stream().map(line->render(player,line,values)).mapToInt(UiText::tabNameWidth).max().orElse(100)+12;
+                int widest=lines.stream().map(line->render(player,line,values)).mapToInt(UiText::tabNameWidth).max().orElse(100)+24;
                 int style=widest<=128?0:widest<=144?1:widest<=160?2:3;
-                char[] frames={'\uEA03','\uEA10','\uEA11','\uEA12'}, rewind={'\uEA04','\uEA13','\uEA15','\uEA17'}, center={'\uEA05','\uEA14','\uEA16','\uEA18'};
-                String heading="§f"+frames[style]+rewind[style]+center[style]+"\uEA01"+center[style];
+                char[] rewind={'\uEA04','\uEA13','\uEA15','\uEA17'}, center={'\uEA05','\uEA14','\uEA16','\uEA18'};
+                int frameWidth=new int[]{128,144,160,192}[style];
+                String heading="§f"+frameLayouts.getProperty("hud."+frameWidth,"")+rewind[style]+center[style]+"\uEA01"+center[style];
                 panel.objective.setDisplayName(ready.contains(id)?(framed?heading:"\uEA01"):render(player,getConfig().getString("sidebar.title","TilkiCraft"),values));
-                for (int i=0;i<panel.rows.size();i++) panel.rows.get(i).setPrefix((framed?"\uEA07":"")+(i<lines.size()?render(player,lines.get(i),values):""));
+                for (int i=0;i<panel.rows.size();i++) {
+                    String line=i<lines.size()?render(player,lines.get(i),values):"";
+                    String padding=framed?"\uEA07":"";
+                    if(framed && i<lines.size() && lines.get(i).contains("{footer}")) padding=UiText.pixelSpace(Math.max(10,(frameWidth-UiText.tabNameWidth(line))/2));
+                    panel.rows.get(i).setPrefix(padding+line);
+                }
             }
             panel.bar.setVisible(getConfig().getBoolean("top-bar.enabled",true));
             panel.bar.setTitle(render(player,getConfig().getString("top-bar.text","TilkiCraft"),values));

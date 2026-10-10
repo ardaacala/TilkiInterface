@@ -4,7 +4,7 @@ TilkiCraft logosu ve turuncu/koyu kahve temasıyla Spigot **1.21.4**, Java **21*
 
 ## Kurulum
 
-1. Sunucuyu durdur, eski `TilkiInterface-1.0.0.jar` varsa kaldır, `TilkiStatsHUD-1.2.0.jar` dosyasını `plugins` klasörüne koy ve yeniden başlat. Eski özel ayarları kullanmak için `plugins/TilkiInterface/config.yml` dosyasını `plugins/TilkiStatsHUD/config.yml` yoluna kopyala. Resmî eski kaynak paketi bağlantısı otomatik güncellenir.
+1. Sunucuyu durdur, eski `TilkiInterface-1.0.0.jar` varsa kaldır, `TilkiStatsHUD-1.3.0.jar` dosyasını `plugins` klasörüne koy ve yeniden başlat. Eski özel ayarları kullanmak için `plugins/TilkiInterface/config.yml` dosyasını `plugins/TilkiStatsHUD/config.yml` yoluna kopyala. Resmî eski kaynak paketi bağlantısı otomatik güncellenir.
 2. Oyuncu kaynak paketini kabul eder. ZIP GitHub'dan otomatik indirilir; sunucu klasörüne ZIP koymak gerekmez.
 3. AuthMe varsa panel yalnızca başarılı girişten sonra açılır. AuthMe yoksa normal açılır.
 4. `/tilkiui` veya `/istatistik`: paneli/üst şeridi aç-kapat. `/tilkiui reload`: yönetici ayar yenileme.
@@ -55,3 +55,9 @@ TilkiTags 1.1.0 kuruluysa sidebar ve üst şerit `{rank}` alanında aynı tek pa
 HUD metne göre 128–192 piksel genişlik seçer. Ölüm/öldürme satırları kaldırılır; kalan satırlarda özgün piksel simgeler görünür. Sidebar yalnız tilki maskotunu, TAB/ESC tam logoyu gösterir. Maskot `art/tilki-mascot.png`; imagegen yerleşik aracı ile uygulanan istem `art/mascot-prompt.txt` dosyasındadır.
 
 TAB çerçevesi görünür oyuncu sayısına ve isim genişliğine göre 200 bitmap varyantından seçilir. Küçük pencere veya yüksek GUI ölçeğinde kırpılma olabilir; oyun içi doğrulama gereklidir. Tam güncelleme: https://github.com/ardaacala/TilkiResourcePack/releases/tag/v1.0.1
+
+## 1.3.0 — HD arayüz
+
+Atlas sınırına uygun 4x çerçeve parçaları, alt yazıda font ölçülerine göre ortalama ve Paper/Spigot boş skor sayı formatı. `art/ornate-frame.png` imagegen yerleşik aracıyla üretildi; kullanılan istem `art/ornate-frame-prompt.txt` dosyasındadır. Genel font seçimi TilkiResourcePack 1.0.2 üzerinden sunucu genelinde yapılır.
+
+Yeniden paketleme: önce `BuildInterfacePack.java` ile temel varlıkları, ardından Gson classpath'i ile `BuildHdAssets.java art/ornate-frame.png` çalıştır. İkinci araç frame-layouts/frame-advances kaynaklarını ve son HD ZIP/SHA1'i üretir. Noto fontları SIL OFL lisansıyla `resourcepack/assets/tilkiinterface/font/fonts` ve JAR resources/fonts içinde bulunur. Font kaynakları https://github.com/notofonts/noto-fonts adresindendir.

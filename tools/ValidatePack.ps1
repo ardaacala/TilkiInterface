@@ -12,7 +12,7 @@ foreach ($provider in $font.providers) {
     $texture = Join-Path $root ('assets/tilkiinterface/textures/' + $provider.file.Substring('tilkiinterface:'.Length))
     $bitmap = [Drawing.Bitmap]::new($texture)
     try {
-        if ($provider.chars.Count -ne 1 -or $provider.chars[0].Length -ne 1) { throw 'Expected single-cell bitmap' }
+        if ($provider.chars.Count -ne 1 -or ($provider.chars[0].Length -ne 1 -and ![char]::IsSurrogatePair($provider.chars[0],0))) { throw 'Expected single-cell bitmap' }
         if ($bitmap.Width -gt 256 -or $bitmap.Height -gt 256) { throw 'Bitmap glyph exceeds client atlas limit' }
         if ($provider.ascent -gt $provider.height) { throw 'Invalid ascent' }
     } finally { $bitmap.Dispose() }
