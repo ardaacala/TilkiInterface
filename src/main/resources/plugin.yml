@@ -2,7 +2,7 @@ name: TilkiStatsHUD
 version: 1.0.1
 main: com.tilkicraft.ui.TilkiInterface
 api-version: '1.21'
-softdepend: [AuthMe, Vault, Essentials, PlaceholderAPI, LuckPerms, SuperiorSkyblock2, CombatGuns, TilkiLoginScreen]
+softdepend: [TilkiResourcePack, AuthMe, Vault, Essentials, PlaceholderAPI, LuckPerms, SuperiorSkyblock2, CombatGuns, TilkiLoginScreen]
 commands:
   tilkiui:
     description: İstatistik panelini aç/kapat

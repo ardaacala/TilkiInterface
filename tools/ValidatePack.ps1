@@ -8,6 +8,7 @@ foreach ($file in (Get-ChildItem $root -Recurse -File | Where-Object { $_.Extens
 }
 $font = [IO.File]::ReadAllText((Join-Path $root 'assets/tilkiinterface/font/ui.json')) | ConvertFrom-Json
 foreach ($provider in $font.providers) {
+    if ($provider.type -ne 'bitmap') { continue }
     $texture = Join-Path $root ('assets/tilkiinterface/textures/' + $provider.file.Substring('tilkiinterface:'.Length))
     $bitmap = [Drawing.Bitmap]::new($texture)
     try {

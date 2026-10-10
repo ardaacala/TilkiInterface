@@ -1,4 +1,7 @@
 {"providers":[
   {"type":"bitmap","file":"tilkiinterface:font/logo.png","height":64,"ascent":44,"chars":[""]},
-  {"type":"bitmap","file":"tilkiinterface:font/logo.png","height":28,"ascent":28,"chars":[""]}
+  {"type":"bitmap","file":"tilkiinterface:font/logo.png","height":28,"ascent":28,"chars":[""]},
+  {"type":"bitmap","file":"tilkiinterface:font/logo.png","height":40,"ascent":30,"chars":[""]},
+  {"type":"bitmap","file":"tilkiinterface:font/sidebar_frame.png","height":144,"ascent":7,"chars":[""]},
+  {"type":"space","advances":{"":-209,"":90,"":4}}
 ]}

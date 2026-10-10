@@ -29,8 +29,8 @@ top-bar:
   enabled: true
   text: '&6◆ &f{money} &8┃ {rank} &8┃ &6TilkiCraft &8┃ &f{online}/{max}'
 pack:
-  url: 'https://github.com/ardaacala/TilkiInterface/releases/download/v1.0.0/TilkiInterface-ResourcePack.zip'
-  sha1: 'c9171d00522572515831997e73d8a92ff687ea38'
+  url: 'https://github.com/ardaacala/TilkiInterface/releases/download/v1.1.0/TilkiInterface-ResourcePack.zip'
+  sha1: '181c062fe58db932ab49dffbe0b1049166dfed10'
   required: false
   delay-ticks: 100
   prompt: 'TilkiCraft logo ve menü temasını yükle.'

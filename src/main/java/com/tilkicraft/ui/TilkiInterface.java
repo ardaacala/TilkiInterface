@@ -28,7 +28,10 @@ public final class TilkiInterface extends JavaPlugin implements Listener, Comman
         final Objective objective;
         final List<Team> rows = new ArrayList<>();
         final BossBar bar;
+        final String previousHeader, previousFooter;
+        String lastHeader, lastFooter;
         Panel(Player player, boolean sidebar) {
+            previousHeader=player.getPlayerListHeader(); previousFooter=player.getPlayerListFooter();
             previous = player.getScoreboard();
             board = sidebar ? Bukkit.getScoreboardManager().getNewScoreboard() : null;
             objective = sidebar ? board.registerNewObjective("tilki_ui", Criteria.DUMMY, "TilkiCraft") : null;
@@ -61,6 +64,7 @@ public final class TilkiInterface extends JavaPlugin implements Listener, Comman
         }
         void close(Player player) {
             bar.removeAll();
+            if (lastHeader!=null && Objects.equals(lastHeader,player.getPlayerListHeader()) && Objects.equals(lastFooter,player.getPlayerListFooter())) player.setPlayerListHeaderFooter(previousHeader==null?"":previousHeader,previousFooter==null?"":previousFooter);
             if (board != null && player.getScoreboard()==board) player.setScoreboard(previous);
         }
     }
@@ -107,6 +111,10 @@ public final class TilkiInterface extends JavaPlugin implements Listener, Comman
         } catch (ReflectiveOperationException ex) { getLogger().warning("Vault rank hook unavailable."); }
     }
     private void readPack() {
+        if (getConfig().getString("pack.url","").equals("https://github.com/ardaacala/TilkiInterface/releases/download/v1.0.0/TilkiInterface-ResourcePack.zip")) {
+            getConfig().set("pack.url","https://github.com/ardaacala/TilkiInterface/releases/download/v1.1.0/TilkiInterface-ResourcePack.zip");
+            getConfig().set("pack.sha1","181c062fe58db932ab49dffbe0b1049166dfed10"); saveConfig();
+        }
         url=getConfig().getString("pack.url","").trim(); hash=null;
         if (url.isEmpty()) return;
         try {
@@ -122,11 +130,12 @@ public final class TilkiInterface extends JavaPlugin implements Listener, Comman
         catch (ReflectiveOperationException ex) { return false; }
     }
     private void requestPack(Player player) {
+        if (SharedPack.active()) { if (SharedPack.loaded(player)) ready.add(player.getUniqueId()); return; }
         if (hash==null) return;
         UUID id=player.getUniqueId();
         Bukkit.getScheduler().runTaskLater(this,()->{
             Player current=Bukkit.getPlayer(id);
-            if (current!=null && hash!=null) current.addResourcePack(PACK,url,hash,getConfig().getString("pack.prompt"),getConfig().getBoolean("pack.required",false));
+            if (!SharedPack.active() && current!=null && hash!=null) current.addResourcePack(PACK,url,hash,getConfig().getString("pack.prompt"),getConfig().getBoolean("pack.required",false));
         },Math.max(1,getConfig().getLong("pack.delay-ticks",100)));
     }
     @EventHandler public void join(PlayerJoinEvent event) { requestPack(event.getPlayer()); }
@@ -134,7 +143,7 @@ public final class TilkiInterface extends JavaPlugin implements Listener, Comman
         remove(event.getPlayer()); ready.remove(event.getPlayer().getUniqueId()); hidden.remove(event.getPlayer().getUniqueId());
     }
     @EventHandler public void pack(PlayerResourcePackStatusEvent event) {
-        if (!PACK.equals(event.getID())) return;
+        if (!SharedPack.matches(PACK,event.getID())) return;
         if (event.getStatus()==PlayerResourcePackStatusEvent.Status.SUCCESSFULLY_LOADED) ready.add(event.getPlayer().getUniqueId());
         else if (event.getStatus()!=PlayerResourcePackStatusEvent.Status.ACCEPTED && event.getStatus()!=PlayerResourcePackStatusEvent.Status.DOWNLOADED) ready.remove(event.getPlayer().getUniqueId());
     }
@@ -186,10 +195,20 @@ public final class TilkiInterface extends JavaPlugin implements Listener, Comman
                 panel=new Panel(player,sidebar); panels.put(id,panel);
             }
             Map<String,String> values=values(player);
+            boolean framed=ready.contains(id) && getConfig().getBoolean("sidebar.frame",true);
+            if (getConfig().getBoolean("tab.enabled",true)) {
+                values.put("tab-logo",ready.contains(id)?"\n\n\n\uEA02\n":"&6&lTILKICRAFT");
+                String header=String.join("\n",getConfig().getStringList("tab.header"));
+                String footer=String.join("\n",getConfig().getStringList("tab.footer"));
+                if (header.isEmpty()) header="{tab-logo}\n&6━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n&6&lTILKICRAFT &8┃ &f{online}/{max}\n";
+                if (footer.isEmpty()) footer="\n&6━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n&7Oyuncu: &f{player} &8┃ &7Ping: &f{ping} ms\n&6{rank} &8┃ &fTilkiCraft";
+                panel.lastHeader=render(player,header,values); panel.lastFooter=render(player,footer,values);
+                player.setPlayerListHeaderFooter(panel.lastHeader,panel.lastFooter);
+            }
             if (panel.objective!=null) {
-                panel.objective.setDisplayName(ready.contains(id)?"\uEA01":render(player,getConfig().getString("sidebar.title","TilkiCraft"),values));
+                panel.objective.setDisplayName(ready.contains(id)?(framed?"§f\uEA03\uEA04\uEA05\uEA01\uEA05":"\uEA01"):render(player,getConfig().getString("sidebar.title","TilkiCraft"),values));
                 List<String> lines=getConfig().getStringList("sidebar.lines");
-                for (int i=0;i<15;i++) panel.rows.get(i).setPrefix(i<lines.size()?render(player,lines.get(i),values):"");
+                for (int i=0;i<15;i++) panel.rows.get(i).setPrefix((framed?"\uEA07":"")+(i<lines.size()?render(player,lines.get(i),values):""));
             }
             panel.bar.setVisible(getConfig().getBoolean("top-bar.enabled",true));
             panel.bar.setTitle(render(player,getConfig().getString("top-bar.text","TilkiCraft"),values));

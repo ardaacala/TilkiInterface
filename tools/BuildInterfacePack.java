@@ -37,11 +37,23 @@ class BuildInterfacePack {
         // Explicit width anchor preserves predictable advances for transparent logo edges.
         logo.setRGB(127,0,0x01ffffff);
         png("assets/tilkiinterface/textures/font/logo.png",logo);
+        BufferedImage frame=new BufferedImage(208,144,BufferedImage.TYPE_INT_ARGB);
+        Graphics2D border=frame.createGraphics();
+        border.setColor(new Color(78,35,12)); border.drawRect(0,0,207,143);
+        border.setColor(new Color(255,151,38)); border.drawRect(1,1,205,141);
+        border.setColor(new Color(255,207,108));
+        for(int x:new int[]{1,200}) for(int y:new int[]{1,136}) border.fillRect(x,y,7,7);
+        border.setColor(new Color(121,58,17));
+        for(int x:new int[]{3,202}) for(int y:new int[]{3,138}) border.fillRect(x,y,3,3);
+        border.dispose(); png("assets/tilkiinterface/textures/font/sidebar_frame.png",frame);
         write("pack.mcmeta","{\"pack\":{\"pack_format\":46,\"description\":\"TilkiCraft - orange fox interface | 1.21.4\"}}\n");
         write("assets/tilkiinterface/font/ui.json","""
             {"providers":[
               {"type":"bitmap","file":"tilkiinterface:font/logo.png","height":64,"ascent":44,"chars":["\uEA00"]},
-              {"type":"bitmap","file":"tilkiinterface:font/logo.png","height":28,"ascent":28,"chars":["\uEA01"]}
+              {"type":"bitmap","file":"tilkiinterface:font/logo.png","height":28,"ascent":28,"chars":["\uEA01"]},
+              {"type":"bitmap","file":"tilkiinterface:font/logo.png","height":40,"ascent":30,"chars":["\uEA02"]},
+              {"type":"bitmap","file":"tilkiinterface:font/sidebar_frame.png","height":144,"ascent":7,"chars":["\uEA03"]},
+              {"type":"space","advances":{"\uEA04":-209,"\uEA05":90,"\uEA07":4}}
             ]}
             """);
         for(String font:new String[]{"default","uniform"})
