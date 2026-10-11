@@ -11,6 +11,8 @@ $logoProviders=@($font.providers | Where-Object { $_.type -eq 'bitmap' -and ($_.
 if($logoProviders.Count -ne 2) { throw 'HUD and TAB need separate logo glyphs' }
 if(!($logoProviders | Where-Object { $_.file -eq 'tilkiinterface:font/mascot.png' -and $_.height -eq 64 }) -or
    !($logoProviders | Where-Object { $_.file -eq 'tilkiinterface:font/tab_logo.png' -and $_.height -eq 52 })) { throw 'Logo glyph placement invalid' }
+$escProvider=@($font.providers | Where-Object { $_.type -eq 'bitmap' -and $_.file -eq 'tilkiinterface:font/esc_frame.png' -and $_.chars -contains [string][char]0xea03 })
+if($escProvider.Count -ne 1 -or $escProvider[0].height -ne 256 -or $escProvider[0].ascent -ne 44) { throw 'ESC frame glyph missing or misplaced' }
 if($font.providers | Where-Object { $_.file -match '(/hd/|sidebar_frame|/tab_[0-9])' }) { throw 'Frame provider remains' }
 foreach ($provider in $font.providers) {
     if ($provider.type -ne 'bitmap') { continue }
@@ -28,7 +30,7 @@ foreach ($fontName in @('default','uniform')) {
 }
 foreach ($language in @('tr_tr','en_us','en_gb')) {
     $definition = [IO.File]::ReadAllText((Join-Path $root ('assets/minecraft/lang/'+$language+'.json'))) | ConvertFrom-Json
-    if ($definition.'menu.game' -ne [string][char]0xea00) { throw 'Missing ESC logo translation' }
+    if ($definition.'menu.game' -ne [string][char]0xea03) { throw 'Missing ESC frame translation' }
 }
 foreach ($state in @('button','button_highlighted','button_disabled')) {
     $imagePath = Join-Path $root ('assets/minecraft/textures/gui/sprites/widget/'+$state+'.png')
@@ -40,11 +42,11 @@ foreach ($state in @('button','button_highlighted','button_disabled')) {
 $zipPath = Join-Path $projectRoot 'dist/TilkiInterface-ResourcePack.zip'
 $zip = [IO.Compression.ZipFile]::OpenRead($zipPath)
 try {
-    if (!$zip.GetEntry('pack.mcmeta') -or !$zip.GetEntry('assets/minecraft/lang/tr_tr.json')) { throw 'ZIP layout invalid' }
+    if (!$zip.GetEntry('pack.mcmeta') -or !$zip.GetEntry('assets/minecraft/lang/tr_tr.json') -or !$zip.GetEntry('assets/tilkiinterface/textures/font/esc_frame.png')) { throw 'ZIP layout invalid' }
     if($zip.Entries.FullName | Where-Object { $_ -like 'assets/tilkiinterface/textures/font/hd/*' -or $_ -like 'assets/tilkiinterface/textures/font/sidebar_frame*' -or $_ -match 'assets/tilkiinterface/textures/font/tab_[0-9]' }) { throw 'Frame texture remains' }
 } finally { $zip.Dispose() }
 $hash = (Get-FileHash $zipPath -Algorithm SHA1).Hash.ToLowerInvariant()
 if ($hash -ne ([IO.File]::ReadAllText((Join-Path $projectRoot 'dist/resourcepack-sha1.txt'))).Trim()) { throw 'Pack SHA1 mismatch' }
 $config = [IO.File]::ReadAllText((Join-Path $projectRoot 'src/main/resources/config.yml'))
 if (!$config.Contains($hash)) { throw 'Default config SHA1 mismatch' }
-Write-Output 'VALID: separate HUD/TAB logos, no frames, font references, ESC languages, buttons, ZIP and SHA1.'
+Write-Output 'VALID: separate HUD/TAB logos, ESC frame, font references, languages, buttons, ZIP and SHA1.'

@@ -4,12 +4,12 @@ TilkiCraft logosu ve turuncu/koyu kahve temasıyla Spigot **1.21.4**, Java **21*
 
 ## Kurulum
 
-1. Sunucuyu durdur, eski `TilkiStatsHUD-*.jar` ve `TilkiInterface-*.jar` dosyalarını kaldır, `TilkiInterface-1.4.3.jar` dosyasını `plugins` klasörüne koy ve yeniden başlat. Eski `plugins/TilkiStatsHUD/config.yml` dosyası ilk açılışta `plugins/TilkiInterface/config.yml` yoluna kopyalanır. Resmî kaynak paketi bağlantısı otomatik güncellenir.
+1. Sunucuyu durdur, eski `TilkiStatsHUD-*.jar` ve `TilkiInterface-*.jar` dosyalarını kaldır, `TilkiInterface-1.4.4.jar` dosyasını `plugins` klasörüne koy ve yeniden başlat. Eski `plugins/TilkiStatsHUD/config.yml` dosyası ilk açılışta `plugins/TilkiInterface/config.yml` yoluna kopyalanır. Resmî kaynak paketi bağlantısı otomatik güncellenir.
 2. Oyuncu kaynak paketini kabul eder. ZIP GitHub'dan otomatik indirilir; sunucu klasörüne ZIP koymak gerekmez.
 3. AuthMe varsa panel yalnızca başarılı girişten sonra açılır. AuthMe yoksa normal açılır.
 4. `/tilkiui` veya `/istatistik`: paneli/üst şeridi aç-kapat. `/tilkiui reload`: yönetici ayar yenileme.
 
-Paket: https://github.com/ardaacala/TilkiInterface/releases/tag/v1.4.3
+Paket: https://github.com/ardaacala/TilkiInterface/releases/tag/v1.4.4
 
 ## Gösterilen bilgiler
 
@@ -21,7 +21,7 @@ Ada seviyesi varsayılan olarak `%superior_island_level_format%` ile okunur. `is
 
 ## ESC ekranı
 
-Kaynak paketi, ESC'nin `menu.game` başlığını logoyla ve mevcut düğmelerin dokusunu turuncu/kahve temayla değiştirir. Mevcut düğmelerin işlevi ve dizilimi Minecraft'a aittir. Yeni düğme, tıklanabilir /vote alanı veya referanstaki birebir özel yerleşim vanilla Spigot ile eklenmez; istemci modu gerekir. Logolu başlık Türkçe, İngilizce ABD ve İngilizce UK dillerinde tanımlıdır.
+Kaynak paketi, ESC'nin `menu.game` başlığı üzerinden TilkiCraft logolu ahşap bir çerçeve çizer ve mevcut düğmelerin dokusunu turuncu/kahve temayla değiştirir. Çerçevenin ortası 204 piksellik mevcut düğmeler için açıktır. Düğmelerin işlevi ve dizilimi Minecraft'a aittir. Yeni düğme, tıklanabilir /vote alanı veya referanstaki birebir özel yerleşim vanilla Spigot ile eklenmez; istemci modu gerekir. Çerçeveli başlık Türkçe, İngilizce ABD ve İngilizce UK dillerinde tanımlıdır.
 
 Düğme dokuları genel Minecraft widget'larıdır: seçenekler gibi başka ekranlarda da tema görünür. Logo kaynağı `CombatGuns/tilkicraft_logo.png`; tasarım değiştirilmeden 128x128'e ölçeklenir. Bitmap hücreleri 256x256 font atlası sınırını aşmaz. Unicode font desteği vardır.
 
@@ -67,3 +67,9 @@ Bu bölüm eski 1.3.0 sürümünü açıklar. Güncel sürümde genel font seçi
 HUD ve TAB çerçeveleri kaldırıldı. HUD üzerinde küçük [tilki başı](art/hud-fox-head.png) bulunur. TAB üzerinde yazılardan ayrı bir satırda [TilkiCraft logosu](art/tab-playerlist-logo.png) gösterilir. [Önizleme](art/logo-layout-preview.png) tasarım amaçlıdır; oyun ekran görüntüsü değildir. ESC logosu, rozetler ve diğer tema varlıkları korunur. Genel yazı fontu birleşik paketteki ASCII atlasından gelir.
 
 Paket yeniden üretimi: Gson classpath'i ile `tools/BuildLogoAssets.java art/hud-fox-head.png art/tab-playerlist-logo.png` çalıştırılır. Araç eski çerçeve varlıklarını siler ve ZIP/SHA1 dosyalarını üretir.
+
+## 1.4.4 — ESC çerçevesi
+
+ESC başlığında TilkiCraft logosunu taşıyan ahşap, yapraklı ve fenerli çerçeve bulunur. Görsel `art/esc-frame-source.png` kaynağından `tools/BuildEscFrame.java` ile 256×256 bitmap glife dönüştürülür. [Önizleme](art/esc-frame-preview.png) tasarım kontrolüdür; oyun ekran görüntüsü değildir. HUD ve TAB çerçevesiz kalır. Bu çalışma yalnızca 1.21.4 istemcisinin normal oyun içi duraklatma menüsünü hedefler. Çok küçük GUI alanlarında alt süslerin kırpılması mümkündür.
+
+Paket yeniden üretiminde önce `BuildInterfacePack`, sonra `BuildLogoAssets`, son olarak `BuildEscFrame art/esc-frame-source.png ../CombatGuns/tilkicraft_logo.png` çalıştırılır. Son adım ESC görselini, dil eşlemelerini, ZIP dosyasını ve SHA-1 değerini yeniler.
