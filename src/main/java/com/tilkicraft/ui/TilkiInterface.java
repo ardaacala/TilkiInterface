@@ -1,6 +1,8 @@
 package com.tilkicraft.ui;
 
 import java.lang.reflect.*;
+import java.nio.file.*;
+import java.io.IOException;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -52,7 +54,7 @@ public final class TilkiInterface extends JavaPlugin implements Listener, Comman
             bar.addPlayer(player);
         }
         static void hideNumbers(Objective objective) {
-            if (!ScoreNumbers.hide(objective)) Bukkit.getLogger().warning("[TilkiStatsHUD] Score number format could not be hidden on this server build.");
+            if (!ScoreNumbers.hide(objective)) Bukkit.getLogger().warning("[TilkiInterface] Score number format could not be hidden on this server build.");
         }
         void close(Player player) {
             bar.removeAll();
@@ -61,6 +63,7 @@ public final class TilkiInterface extends JavaPlugin implements Listener, Comman
         }
     }
     @Override public void onEnable() {
+        migrateLegacyConfig();
         saveDefaultConfig();
         try(var input=getResource("frame-layouts.properties")) { frameLayouts.load(input); }
         catch(Exception ex) { getLogger().severe("HD frame layouts could not be loaded: "+ex.getMessage()); }
@@ -71,6 +74,13 @@ public final class TilkiInterface extends JavaPlugin implements Listener, Comman
         Objects.requireNonNull(getCommand("tilkiui")).setExecutor(this);
         Bukkit.getScheduler().runTaskTimer(this,this::refresh,20,20);
         for (Player player : Bukkit.getOnlinePlayers()) requestPack(player);
+    }
+    private void migrateLegacyConfig() {
+        Path destination=getDataFolder().toPath().resolve("config.yml");
+        Path legacy=getDataFolder().toPath().resolveSibling("TilkiStatsHUD").resolve("config.yml");
+        if(Files.exists(destination)||!Files.isRegularFile(legacy))return;
+        try { Files.createDirectories(destination.getParent());Files.copy(legacy,destination); }
+        catch(IOException ex) { getLogger().warning("Could not migrate TilkiStatsHUD config: "+ex.getMessage()); }
     }
     @SuppressWarnings({"unchecked","rawtypes"})
     private void bindHooks() {
@@ -105,6 +115,14 @@ public final class TilkiInterface extends JavaPlugin implements Listener, Comman
         } catch (ReflectiveOperationException ex) { getLogger().warning("Vault rank hook unavailable."); }
     }
     private void readPack() {
+        if(!getConfig().getBoolean("layout.safe-frames-v4",false)) {
+            getConfig().set("layout.previous-tab-header",getConfig().getStringList("tab.header"));
+            getConfig().set("layout.previous-tab-footer",getConfig().getStringList("tab.footer"));
+            getConfig().set("tab.header",Arrays.asList(FrameGeometry.HEADER.split("\n",-1)));
+            getConfig().set("tab.footer",Arrays.asList(FrameGeometry.FOOTER.split("\n",-1)));
+            getConfig().set("sidebar.lines",getConfig().getStringList("sidebar.lines").stream().map(line->line.replace("&8{date}","&7{date}")).toList());
+            getConfig().set("layout.safe-frames-v4",true);saveConfig();
+        }
         if (!getConfig().getBoolean("layout.compact-v2",false)) {
             List<String> lines=new ArrayList<>(getConfig().getStringList("sidebar.lines"));
             lines.removeIf(line->line.contains("{kills}") || line.contains("{deaths}"));
@@ -118,9 +136,9 @@ public final class TilkiInterface extends JavaPlugin implements Listener, Comman
             getConfig().set("sidebar.lines",lines); getConfig().set("layout.compact-v2",true); saveConfig();
         }
         String previousUrl=getConfig().getString("pack.url","");
-        if (previousUrl.startsWith("https://github.com/ardaacala/TilkiInterface/releases/download/") && !previousUrl.contains("/v1.3.0/")) {
-            getConfig().set("pack.url","https://github.com/ardaacala/TilkiInterface/releases/download/v1.3.0/TilkiInterface-ResourcePack.zip");
-            getConfig().set("pack.sha1","9a393eab0d46933bac62c3a3a0efb9f15b9fc79f"); saveConfig();
+        if (previousUrl.startsWith("https://github.com/ardaacala/TilkiInterface/releases/download/") && !previousUrl.contains("/v1.4.1/")) {
+            getConfig().set("pack.url","https://github.com/ardaacala/TilkiInterface/releases/download/v1.4.1/TilkiInterface-ResourcePack.zip");
+            getConfig().set("pack.sha1","b868481da4ef8e46500d1e2687a60a04b12e3569"); saveConfig();
         }
         url=getConfig().getString("pack.url","").trim(); hash=null;
         if (url.isEmpty()) return;
@@ -212,28 +230,29 @@ public final class TilkiInterface extends JavaPlugin implements Listener, Comman
                 List<? extends Player> visible=Bukkit.getOnlinePlayers().stream().filter(player::canSee).toList();
                 int players=Math.max(1,Math.min(80,visible.size())), columns=(players+19)/20, rows=(players+columns-1)/columns;
                 int longest=visible.stream().mapToInt(p->UiText.tabNameWidth(p.getPlayerListName())).max().orElse(120);
-                int width=Math.max(192,Math.min(768,((columns*(longest+24)+63)/64)*64)), variant=(width-192)/64;
+                int infoWidth=UiText.tabNameWidth(player.getName()+" ┃ "+player.getPing()+" ms");
+                int width=FrameGeometry.tabWidth(columns,longest,infoWidth), variant=(width-192)/64;
                 values.put("tab-frame",ready.contains(id)?"§f"+frameLayouts.getProperty("tab."+variant+"."+rows,""):"&6━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
                 values.put("tab-bottom",ready.contains(id)?"§f"+frameLayouts.getProperty("bottom."+variant,""):"&6━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
                 String header=String.join("\n",getConfig().getStringList("tab.header"));
                 String footer=String.join("\n",getConfig().getStringList("tab.footer"));
-                if (header.isEmpty()) header="{tab-logo}\n{tab-frame}\n&6&lTILKICRAFT &8┃ &f{online}/{max}\n";
-                if (footer.isEmpty()) footer="\n&7Oyuncu: &f{player} &8┃ &7Ping: &f{ping} ms\n&6{rank} &8┃ &fTilkiCraft\n{tab-bottom}";
+                if (header.isEmpty()) header=FrameGeometry.HEADER;
+                if (footer.isEmpty()) footer=FrameGeometry.FOOTER;
                 panel.lastHeader=render(player,header,values); panel.lastFooter=render(player,footer,values);
                 player.setPlayerListHeaderFooter(panel.lastHeader,panel.lastFooter);
             }
             if (panel.objective!=null) {
                 List<String> lines=getConfig().getStringList("sidebar.lines");
-                int widest=lines.stream().map(line->render(player,line,values)).mapToInt(UiText::tabNameWidth).max().orElse(100)+24;
-                int style=widest<=128?0:widest<=144?1:widest<=160?2:3;
-                char[] rewind={'\uEA04','\uEA13','\uEA15','\uEA17'}, center={'\uEA05','\uEA14','\uEA16','\uEA18'};
-                int frameWidth=new int[]{128,144,160,192}[style];
-                String heading="§f"+frameLayouts.getProperty("hud."+frameWidth,"")+rewind[style]+center[style]+"\uEA01"+center[style];
+                int widest=lines.stream().map(line->render(player,line,values)).mapToInt(UiText::tabNameWidth).max().orElse(100);
+                int frameWidth=FrameGeometry.hudWidth(widest);
+                String center=UiText.pixelSpace((frameWidth-28)/2);
+                String heading="§f"+frameLayouts.getProperty("hud."+frameWidth,"")+(char)(0xee00+frameWidth/16)+"\uEA08"+center+"\uEA01"+center;
                 panel.objective.setDisplayName(ready.contains(id)?(framed?heading:"\uEA01"):render(player,getConfig().getString("sidebar.title","TilkiCraft"),values));
                 for (int i=0;i<panel.rows.size();i++) {
                     String line=i<lines.size()?render(player,lines.get(i),values):"";
                     String padding=framed?"\uEA07":"";
-                    if(framed && i<lines.size() && lines.get(i).contains("{footer}")) padding=UiText.pixelSpace(Math.max(10,(frameWidth-UiText.tabNameWidth(line))/2));
+                    if(framed) line=UiText.fit(line,frameWidth-FrameGeometry.HUD_INSET*2);
+                    if(framed && i<lines.size() && lines.get(i).contains("{footer}")) padding=UiText.pixelSpace(Math.max(FrameGeometry.HUD_INSET,(frameWidth-UiText.tabNameWidth(line))/2));
                     panel.rows.get(i).setPrefix(padding+line);
                 }
             }
@@ -248,7 +267,7 @@ public final class TilkiInterface extends JavaPlugin implements Listener, Comman
             for (Player player:Bukkit.getOnlinePlayers()) remove(player);
             reloadConfig(); bindHooks(); readPack(); ready.clear();
             for (Player player:Bukkit.getOnlinePlayers()) requestPack(player);
-            sender.sendMessage("TilkiStatsHUD ayarları yenilendi."); return true;
+            sender.sendMessage("TilkiInterface ayarları yenilendi."); return true;
         }
         if (sender instanceof Player player) {
             if (!hidden.add(player.getUniqueId())) hidden.remove(player.getUniqueId());

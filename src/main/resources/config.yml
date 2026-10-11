@@ -12,7 +12,7 @@ sidebar:
   # İstersen örn. %superior_island_level% yaz; ilgili PAPI expansion gerekir.
   island-placeholder: ''
   lines:
-    - '&8{date}'
+    - '&7{date}'
     - ' '
     - '&6● &fÇevrimiçi &7» &e{online}/{max}'
     - '&6● &fPing &7» &e{ping} ms'
@@ -29,8 +29,8 @@ top-bar:
   enabled: true
   text: '&6◆ &f{money} &8┃ {rank} &8┃ &6TilkiCraft &8┃ &f{online}/{max}'
 pack:
-  url: 'https://github.com/ardaacala/TilkiInterface/releases/download/v1.3.0/TilkiInterface-ResourcePack.zip'
-  sha1: '9a393eab0d46933bac62c3a3a0efb9f15b9fc79f'
+  url: 'https://github.com/ardaacala/TilkiInterface/releases/download/v1.4.1/TilkiInterface-ResourcePack.zip'
+  sha1: 'b868481da4ef8e46500d1e2687a60a04b12e3569'
   required: false
   delay-ticks: 100
   prompt: 'TilkiCraft logo ve menü temasını yükle.'

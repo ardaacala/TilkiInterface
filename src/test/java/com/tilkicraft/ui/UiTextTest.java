@@ -31,4 +31,11 @@ class UiTextTest {
         assertTrue(UiText.tabNameWidth("\uEB10 Arda")>UiText.tabNameWidth("Arda"));
         assertTrue(UiText.tabNameWidth("WWWW")>UiText.tabNameWidth("iiii"));
     }
+    @Test void longSidebarContentIsKeptInsideBothRailsWithoutSplittingCodes() {
+        String text="§eVery long player name with a rank \uEB10";
+        String fitted=UiText.fit(text,90);
+        assertTrue(UiText.tabNameWidth(fitted)<=90);
+        assertTrue(fitted.startsWith("§e"));assertTrue(fitted.endsWith("…"));
+        assertEquals("§fArda",UiText.fit("§fArda",90));
+    }
 }

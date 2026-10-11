@@ -24,6 +24,17 @@ public final class UiText {
         return (int)Math.ceil(width);
     }
     public static String pixelSpace(int pixels) { return String.valueOf((char)(0xee40+Math.max(0,Math.min(192,pixels)))); }
+    public static String fit(String text,int pixels) {
+        if(tabNameWidth(text)<=pixels)return text;
+        StringBuilder fitted=new StringBuilder();
+        for(int i=0;i<text.length();) {
+            if(text.charAt(i)=='§' && i+1<text.length()) { fitted.append(text,i,i+2);i+=2;continue; }
+            int cp=text.codePointAt(i);String next=new String(Character.toChars(cp));
+            if(tabNameWidth(fitted+next+"…")>pixels)break;
+            fitted.append(next);i+=Character.charCount(cp);
+        }
+        return fitted+"…";
+    }
     public static String compact(double value) {
         if (!Double.isFinite(value)) return "—";
         double amount = Math.abs(value);

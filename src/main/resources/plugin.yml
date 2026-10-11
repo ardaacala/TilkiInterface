@@ -1,5 +1,5 @@
-name: TilkiStatsHUD
-version: 1.3.0
+name: TilkiInterface
+version: 1.4.1
 main: com.tilkicraft.ui.TilkiInterface
 api-version: '1.21'
 softdepend: [TilkiResourcePack, AuthMe, Vault, Essentials, PlaceholderAPI, LuckPerms, SuperiorSkyblock2, CombatGuns, TilkiLoginScreen]
