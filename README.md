@@ -4,12 +4,12 @@ TilkiCraft logosu ve turuncu/koyu kahve temasıyla Spigot **1.21.4**, Java **21*
 
 ## Kurulum
 
-1. Sunucuyu durdur, eski `TilkiStatsHUD-*.jar` ve `TilkiInterface-*.jar` dosyalarını kaldır, `TilkiInterface-1.4.1.jar` dosyasını `plugins` klasörüne koy ve yeniden başlat. Eski `plugins/TilkiStatsHUD/config.yml` dosyası ilk açılışta `plugins/TilkiInterface/config.yml` yoluna kopyalanır. Resmî kaynak paketi bağlantısı otomatik güncellenir.
+1. Sunucuyu durdur, eski `TilkiStatsHUD-*.jar` ve `TilkiInterface-*.jar` dosyalarını kaldır, `TilkiInterface-1.4.2.jar` dosyasını `plugins` klasörüne koy ve yeniden başlat. Eski `plugins/TilkiStatsHUD/config.yml` dosyası ilk açılışta `plugins/TilkiInterface/config.yml` yoluna kopyalanır. Resmî kaynak paketi bağlantısı otomatik güncellenir.
 2. Oyuncu kaynak paketini kabul eder. ZIP GitHub'dan otomatik indirilir; sunucu klasörüne ZIP koymak gerekmez.
 3. AuthMe varsa panel yalnızca başarılı girişten sonra açılır. AuthMe yoksa normal açılır.
 4. `/tilkiui` veya `/istatistik`: paneli/üst şeridi aç-kapat. `/tilkiui reload`: yönetici ayar yenileme.
 
-Paket: https://github.com/ardaacala/TilkiInterface/releases/tag/v1.4.1
+Paket: https://github.com/ardaacala/TilkiInterface/releases/tag/v1.4.2
 
 ## Gösterilen bilgiler
 
@@ -60,4 +60,10 @@ TAB çerçevesi görünür oyuncu sayısına ve isim genişliğine göre 200 bit
 
 Atlas sınırına uygun 4x çerçeve parçaları, alt yazıda font ölçülerine göre ortalama ve Paper/Spigot boş skor sayı formatı. `art/ornate-frame.png` imagegen yerleşik aracıyla üretildi; kullanılan istem `art/ornate-frame-prompt.txt` dosyasındadır. Genel font seçimi TilkiResourcePack 1.0.2 üzerinden sunucu genelinde yapılır.
 
-Yeniden paketleme: önce `BuildInterfacePack.java` ile temel varlıkları, ardından Gson classpath'i ile `BuildHdAssets.java art/ornate-frame.png` çalıştır. İkinci araç frame-layouts/frame-advances kaynaklarını ve son HD ZIP/SHA1'i üretir. Noto fontları SIL OFL lisansıyla `resourcepack/assets/tilkiinterface/font/fonts` ve JAR resources/fonts içinde bulunur. Font kaynakları https://github.com/notofonts/noto-fonts adresindendir.
+Bu bölüm eski 1.3.0 sürümünü açıklar. Güncel sürümde genel font seçimi ve Noto dosyaları kaldırılmıştır.
+
+## 1.4.2 — Hafif logo çerçeveleri
+
+HUD üst kenarına [tilki başı](art/hud-fox-head.png), TAB üst kenarına TilkiCraft logosu çerçevenin bir parçası olarak yerleştirilir. Önizleme: [frame-layout-preview.png](art/frame-layout-preview.png). İnce, kesintisiz kenarlar oyuncu listesi büyüdüğünde belirgin tekrar oluşturmaz. Genel yazı fontu Minecraft varsayılanında kalır.
+
+Paket yeniden üretimi: Gson classpath'i ile `tools/BuildHdAssets.java art/hud-fox-head.png resourcepack/assets/tilkiinterface/textures/font/logo.png` çalıştırılır. Araç atlas sınırına uygun küçük parçaları, düzen özelliklerini ve ZIP/SHA1 dosyalarını üretir.

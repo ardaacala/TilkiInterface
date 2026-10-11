@@ -2,26 +2,20 @@ package com.tilkicraft.ui;
 import java.util.Locale;
 
 public final class UiText {
-    private static final java.awt.font.FontRenderContext CONTEXT=new java.awt.font.FontRenderContext(null,true,true);
-    private static java.awt.Font font;
-    private static String currentStyle;
     private UiText() {}
-    public static void fontStyle(String style) {
-        if(style.equals(currentStyle))return;
-        if(!java.util.Set.of("modern","classic","fantasy").contains(style))style="modern";
-        try(var input=UiText.class.getResourceAsStream("/fonts/"+style+".ttf")) {
-            font=java.awt.Font.createFont(java.awt.Font.TRUETYPE_FONT,input).deriveFont(9f);currentStyle=style;
-        } catch(Exception ex) { font=new java.awt.Font("Dialog",java.awt.Font.PLAIN,9);currentStyle=style; }
-    }
     public static int tabNameWidth(String name) {
-        if(font==null)fontStyle("modern");
-        name=org.bukkit.ChatColor.stripColor(name); double width=0;
+        name=org.bukkit.ChatColor.stripColor(name);
+        if(name==null)return 0;
+        int width=0;
         for(int c:name.codePoints().toArray()) {
-            if(c>=0xeb00 && c<=0xeb10) { width+=new int[]{55,51,40,48,54,52,34,48,46,43,46,64,33,37,56,61,36}[c-0xeb00]; continue; }
-            if(c>=0xea20 && c<=0xea26) { width+=9; continue; }
-            width+=c==' '?4:font.getStringBounds(new String(Character.toChars(c)),CONTEXT).getWidth();
+            if(c>=0xeb00 && c<=0xeb10) { width+=new int[]{55,51,40,48,54,52,34,48,46,43,46,64,33,37,56,61,36}[c-0xeb00];continue; }
+            if(c>=0xea20 && c<=0xea26) { width+=9;continue; }
+            if(c==' ')width+=4;
+            else if(".,:;!|i".indexOf(c)>=0)width+=2;
+            else if("ltI'".indexOf(c)>=0)width+=4;
+            else width+=6;
         }
-        return (int)Math.ceil(width);
+        return width;
     }
     public static String pixelSpace(int pixels) { return String.valueOf((char)(0xee40+Math.max(0,Math.min(192,pixels)))); }
     public static String fit(String text,int pixels) {

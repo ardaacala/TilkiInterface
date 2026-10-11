@@ -123,6 +123,11 @@ public final class TilkiInterface extends JavaPlugin implements Listener, Comman
             getConfig().set("sidebar.lines",getConfig().getStringList("sidebar.lines").stream().map(line->line.replace("&8{date}","&7{date}")).toList());
             getConfig().set("layout.safe-frames-v4",true);saveConfig();
         }
+        if(!getConfig().getBoolean("layout.logo-crest-v5",false)) {
+            if(getConfig().getStringList("tab.header").stream().anyMatch(line->line.contains("{tab-logo}")))
+                getConfig().set("tab.header",Arrays.asList(FrameGeometry.HEADER.split("\n",-1)));
+            getConfig().set("layout.logo-crest-v5",true);saveConfig();
+        }
         if (!getConfig().getBoolean("layout.compact-v2",false)) {
             List<String> lines=new ArrayList<>(getConfig().getStringList("sidebar.lines"));
             lines.removeIf(line->line.contains("{kills}") || line.contains("{deaths}"));
@@ -136,9 +141,9 @@ public final class TilkiInterface extends JavaPlugin implements Listener, Comman
             getConfig().set("sidebar.lines",lines); getConfig().set("layout.compact-v2",true); saveConfig();
         }
         String previousUrl=getConfig().getString("pack.url","");
-        if (previousUrl.startsWith("https://github.com/ardaacala/TilkiInterface/releases/download/") && !previousUrl.contains("/v1.4.1/")) {
-            getConfig().set("pack.url","https://github.com/ardaacala/TilkiInterface/releases/download/v1.4.1/TilkiInterface-ResourcePack.zip");
-            getConfig().set("pack.sha1","b868481da4ef8e46500d1e2687a60a04b12e3569"); saveConfig();
+        if (previousUrl.startsWith("https://github.com/ardaacala/TilkiInterface/releases/download/") && !previousUrl.contains("/v1.4.2/")) {
+            getConfig().set("pack.url","https://github.com/ardaacala/TilkiInterface/releases/download/v1.4.2/TilkiInterface-ResourcePack.zip");
+            getConfig().set("pack.sha1","09057a6a9175b324da6740c5c083d9bbcc41e67e"); saveConfig();
         }
         url=getConfig().getString("pack.url","").trim(); hash=null;
         if (url.isEmpty()) return;
@@ -212,7 +217,6 @@ public final class TilkiInterface extends JavaPlugin implements Listener, Comman
         return ChatColor.translateAlternateColorCodes('&',expand(player,text,text));
     }
     private void refresh() {
-        UiText.fontStyle(SharedPack.active()?SharedPack.fontStyle():getConfig().getString("font-style","modern"));
         for (Player player:Bukkit.getOnlinePlayers()) {
             UUID id=player.getUniqueId();
             if (!loggedIn(player) || hidden.contains(id)) { remove(player); continue; }
@@ -226,7 +230,6 @@ public final class TilkiInterface extends JavaPlugin implements Listener, Comman
             Map<String,String> values=values(player);
             boolean framed=ready.contains(id) && getConfig().getBoolean("sidebar.frame",true);
             if (getConfig().getBoolean("tab.enabled",true)) {
-                values.put("tab-logo",ready.contains(id)?"\n\n\n\uEA02\n":"&6&lTILKICRAFT");
                 List<? extends Player> visible=Bukkit.getOnlinePlayers().stream().filter(player::canSee).toList();
                 int players=Math.max(1,Math.min(80,visible.size())), columns=(players+19)/20, rows=(players+columns-1)/columns;
                 int longest=visible.stream().mapToInt(p->UiText.tabNameWidth(p.getPlayerListName())).max().orElse(120);
@@ -245,8 +248,7 @@ public final class TilkiInterface extends JavaPlugin implements Listener, Comman
                 List<String> lines=getConfig().getStringList("sidebar.lines");
                 int widest=lines.stream().map(line->render(player,line,values)).mapToInt(UiText::tabNameWidth).max().orElse(100);
                 int frameWidth=FrameGeometry.hudWidth(widest);
-                String center=UiText.pixelSpace((frameWidth-28)/2);
-                String heading="§f"+frameLayouts.getProperty("hud."+frameWidth,"")+(char)(0xee00+frameWidth/16)+"\uEA08"+center+"\uEA01"+center;
+                String heading="§f"+frameLayouts.getProperty("hud."+frameWidth,"");
                 panel.objective.setDisplayName(ready.contains(id)?(framed?heading:"\uEA01"):render(player,getConfig().getString("sidebar.title","TilkiCraft"),values));
                 for (int i=0;i<panel.rows.size();i++) {
                     String line=i<lines.size()?render(player,lines.get(i),values):"";

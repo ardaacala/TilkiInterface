@@ -13,55 +13,60 @@ class BuildHdAssets {
  static final Map<String,String> glyphs=new HashMap<>(); static int next=0xf0000;
  static final Map<String,String> textures=new HashMap<>();
  static final Properties advances=new Properties();
- static BufferedImage master;
+ static BufferedImage hudLogo,tabLogo;
  // Artwork covers the client's dark panel margin without increasing text advance.
  static final int FRAME_OVERHANG=16, TAB_TOP_EXTENSION=48;
  static String space(int amount) { return String.valueOf((char)(0xee40+amount)); }
  static String framed(BufferedImage image,int verticalOffset) throws Exception {
   return rewind(FRAME_OVERHANG)+layout(image,verticalOffset)+rewind(FRAME_OVERHANG);
  }
- static BufferedImage frame(int w,int h,boolean bottomOnly) {
-  BufferedImage result=new BufferedImage(w*2,h*2,BufferedImage.TYPE_INT_ARGB);Graphics2D g=result.createGraphics();
-  g.setRenderingHint(RenderingHints.KEY_INTERPOLATION,RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-  int c=320, d=(bottomOnly?48:32)*2, mw=master.getWidth(),mh=master.getHeight();
-  // Nine-slice corners and rails, keeping the center fully transparent.
-  for(int x=0;x<3;x++)for(int y=0;y<3;y++) {
-   if(x==1&&y==1)continue;
-   int sx=x==0?0:x==1?c:mw-c, sy=y==0?0:y==1?c:mh-c;
-   int sw=x==1?mw-2*c:c,sh=y==1?mh-2*c:c;
-   int dx=x==0?0:x==1?d:w*2-d,dy=y==0?0:y==1?d:h*2-d;
-   int dw=x==1?w*2-2*d:d,dh=y==1?h*2-2*d:d;
-
-   if(x==1) {
-    int count=bottomOnly?4:(dw<=384?3:4);
-    for(int segment=0;segment<count;segment++) {
-     int left=dx+dw*segment/count,right=dx+dw*(segment+1)/count;
-     g.drawImage(master,left,dy,right,dy+dh,sx,sy,sx+sw,sy+sh,null);
-    }
-   } else if(y==1) {
-    int count=Math.max(2,(dh+63)/64-3);
-    for(int segment=0;segment<count;segment++) {
-     int top=dy+dh*segment/count,bottom=dy+dh*(segment+1)/count;
-     g.drawImage(master,dx,top,dx+dw,bottom,sx,sy,sx+sw,sy+sh,null);
-    }
-   } else g.drawImage(master,dx,dy,dx+dw,dy+dh,sx,sy,sx+sw,sy+sh,null);
+ static BufferedImage frame(int w,int h,boolean tab) {
+  BufferedImage image=new BufferedImage(w,h,BufferedImage.TYPE_INT_ARGB);Graphics2D g=image.createGraphics();
+  g.setRenderingHint(RenderingHints.KEY_ANTIALIASING,RenderingHints.VALUE_ANTIALIAS_OFF);
+  g.setRenderingHint(RenderingHints.KEY_INTERPOLATION,RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+  // Continuous rails keep a growing player list visually calm.
+  g.setColor(new Color(17,13,15,215));
+  g.fillRect(2,3,5,h-6);g.fillRect(w-7,3,5,h-6);
+  g.fillRect(3,2,w-6,5);g.fillRect(3,h-7,w-6,5);
+  g.setColor(new Color(255,138,31,235));
+  g.fillRect(3,3,w-6,2);g.fillRect(3,h-5,w-6,2);
+  g.fillRect(3,4,2,h-8);g.fillRect(w-5,4,2,h-8);
+  g.setColor(new Color(255,207,91,205));
+  g.fillRect(6,6,w-12,1);g.fillRect(6,h-7,w-12,1);
+  g.fillRect(6,7,1,h-14);g.fillRect(w-7,7,1,h-14);
+  g.setColor(new Color(70,36,28,170));
+  g.fillRect(8,8,w-16,1);g.fillRect(8,h-9,w-16,1);
+  g.fillRect(8,9,1,h-18);g.fillRect(w-9,9,1,h-18);
+  BufferedImage logo=tab?tabLogo:hudLogo;
+  int size=tab?62:46,left=(w-size)/2,crestHeight=tab?36:30;
+  g.setColor(new Color(17,13,15,235));g.fillRect(left-5,2,size+10,crestHeight);
+  g.setColor(new Color(255,138,31));
+  g.fillRect(left-5,2,size+10,2);
+  g.fillRect(left-5,2,2,crestHeight);g.fillRect(left+size+3,2,2,crestHeight);
+  g.setColor(new Color(255,207,91));g.fillRect(left-2,5,size+4,1);
+  g.drawImage(logo,left,tab?0:-1,size,size,null);
+  g.setColor(new Color(255,174,51));
+  for(int x:new int[]{3,w-11})for(int y:new int[]{3,h-11}) {
+   g.fillRect(x,y,8,2);g.fillRect(x,y,2,8);
   }
-  g.dispose();return result;
+  g.setColor(new Color(255,207,91,190));
+  g.fillRect(3,h/2-3,4,6);g.fillRect(w-7,h/2-3,4,6);
+  g.dispose();return image;
  }
  static String layout(BufferedImage image,int verticalOffset) throws Exception {
-  int width=image.getWidth()/2,height=image.getHeight()/2;StringBuilder text=new StringBuilder();
+  int width=image.getWidth(),height=image.getHeight();StringBuilder text=new StringBuilder();
   for(int y=0;y<height;y+=64) {
    for(int x=0;x<width;x+=64) {
     int w=Math.min(64,width-x),h=Math.min(64,height-y);boolean visible=false;
-    BufferedImage tile=new BufferedImage(w*2,h*2,BufferedImage.TYPE_INT_ARGB);
-    for(int yy=0;yy<h*2;yy++)for(int xx=0;xx<w*2;xx++) {
-     int pixel=image.getRGB(x*2+xx,y*2+yy);
+    BufferedImage tile=new BufferedImage(w,h,BufferedImage.TYPE_INT_ARGB);
+    for(int yy=0;yy<h;yy++)for(int xx=0;xx<w;xx++) {
+     int pixel=image.getRGB(x+xx,y+yy);
      tile.setRGB(xx,yy,pixel);visible|=(pixel>>>24)!=0;
     }
     if(!visible) { text.append(space(w));continue; }
-    tile.setRGB(w*2-1,0,0x01ffffff); // fixed advance, even with transparent edges
+    tile.setRGB(w-1,0,0x01ffffff); // fixed advance, even with transparent edges
     var digest=MessageDigest.getInstance("SHA-256");
-    for(int pixel:tile.getRGB(0,0,w*2,h*2,null,0,w*2))digest.update(java.nio.ByteBuffer.allocate(4).putInt(pixel).array());
+    for(int pixel:tile.getRGB(0,0,w,h,null,0,w))digest.update(java.nio.ByteBuffer.allocate(4).putInt(pixel).array());
     String pixels=HexFormat.of().formatHex(digest.digest());
     String key=pixels+":"+h+":"+(y+verticalOffset);
     String character=glyphs.get(key);
@@ -81,12 +86,16 @@ class BuildHdAssets {
  }
  static String rewind(int width) { return String.valueOf((char)(0xee00+width/16)); }
  public static void main(String[] args) throws Exception {
-  master=ImageIO.read(Path.of(args[0]).toFile());Files.createDirectories(TEX);
+  hudLogo=ImageIO.read(Path.of(args[0]).toFile());tabLogo=ImageIO.read(Path.of(args[1]).toFile());Files.createDirectories(TEX);
   Path mascotPath=ROOT.resolve("assets/tilkiinterface/textures/font/mascot.png");
   BufferedImage mascot=ImageIO.read(mascotPath.toFile());
   BufferedImage raised=new BufferedImage(128,256,BufferedImage.TYPE_INT_ARGB);
   Graphics2D mg=raised.createGraphics();mg.drawImage(mascot,0,0,128,128,0,0,mascot.getWidth(),Math.min(mascot.getHeight(),mascot.getWidth()),null);mg.dispose();
   ImageIO.write(raised,"png",mascotPath.toFile());
+  Path legacy=ROOT.resolve("assets/tilkiinterface/textures/font");
+  try(var old=Files.list(legacy)) {
+   for(Path file:old.filter(p->p.getFileName().toString().matches("(sidebar_frame.*|tab_.*)\\.png")).toList())Files.delete(file);
+  }
   try(var old=Files.list(TEX)) { for(Path file:old.filter(p->p.getFileName().toString().matches("tile_[0-9]+\\.png")).toList()) Files.delete(file); }
   for(int width:new int[]{192,208,224,256}) layouts.setProperty("hud."+width,framed(frame(width+FRAME_OVERHANG*2,188,false),-28));
   for(int variant=0;variant<10;variant++) {
@@ -108,17 +117,14 @@ class BuildHdAssets {
    if(file.endsWith("/mascot.png")) { p.addProperty("height",56);p.addProperty("ascent",56); }
    if(p.get("type").getAsString().equals("space")) {
     for(String key:new ArrayList<>(p.getAsJsonObject("advances").keySet())) if(spacing.has(key))p.getAsJsonObject("advances").remove(key);
+    if(p.getAsJsonObject("advances").size()==0)continue;
    }
    kept.add(p);
   }
   kept.addAll(providers);current.add("providers",kept);Files.writeString(font,current.toString());
   Files.createDirectories(Path.of("src/main/resources"));try(var out=Files.newOutputStream(Path.of("src/main/resources/frame-layouts.properties"))) { layouts.store(out,"HD atlas-safe frame layouts"); }
   try(var out=Files.newOutputStream(Path.of("src/main/resources/frame-advances.properties"))) { advances.store(out,"Logical advances for layout validation"); }
-  for(String style:java.util.List.of("modern","classic","fantasy")) {
-   String definition="{\"providers\":[{\"type\":\"space\",\"advances\":{\" \":4}},{\"type\":\"ttf\",\"file\":\"tilkiinterface:fonts/"+style+".ttf\",\"size\":9,\"oversample\":4,\"shift\":[0,0]}]}";
-   Files.writeString(ROOT.resolve("assets/tilkiinterface/font/text_"+style+".json"),definition);
-  }
-  for(String name:java.util.List.of("default","uniform"))Files.writeString(ROOT.resolve("assets/minecraft/font/"+name+".json"),"{\"providers\":[{\"type\":\"reference\",\"id\":\"tilkiinterface:ui\"},{\"type\":\"reference\",\"id\":\"tilkiinterface:text_modern\"}]}");
+  for(String name:java.util.List.of("default","uniform"))Files.writeString(ROOT.resolve("assets/minecraft/font/"+name+".json"),"{\"providers\":[{\"type\":\"reference\",\"id\":\"tilkiinterface:ui\"}]}");
   Path zip=Path.of("dist/TilkiInterface-ResourcePack.zip");
   try(var out=new java.util.zip.ZipOutputStream(Files.newOutputStream(zip));var walk=Files.walk(ROOT)) { for(Path file:walk.filter(Files::isRegularFile).sorted().toList()) {var entry=new java.util.zip.ZipEntry(ROOT.relativize(file).toString().replace('\\','/'));entry.setTime(0);out.putNextEntry(entry);Files.copy(file,out);out.closeEntry();} }
   String hash=HexFormat.of().formatHex(MessageDigest.getInstance("SHA-1").digest(Files.readAllBytes(zip)));Files.writeString(Path.of("dist/resourcepack-sha1.txt"),hash+"\n");
@@ -126,12 +132,12 @@ class BuildHdAssets {
   System.out.println("HD tiles: "+glyphs.size()+"; layouts: "+layouts.size());
   BufferedImage preview=new BufferedImage(1152,820,BufferedImage.TYPE_INT_ARGB);Graphics2D g=preview.createGraphics();
   g.setColor(new Color(25,24,22));g.fillRect(0,0,1152,820);
-  g.drawImage(frame(256+FRAME_OVERHANG*2,188,false),0,20,576,376,null);
-  g.drawImage(frame(320+FRAME_OVERHANG*2,159+TAB_TOP_EXTENSION,true),512,20,704,414,null);
+  g.drawImage(frame(256+FRAME_OVERHANG*2,188,false),40,100,472,382,null);
+  g.drawImage(frame(320+FRAME_OVERHANG*2,159+TAB_TOP_EXTENSION,true),560,100,528,311,null);
   g.setColor(Color.WHITE);g.setFont(new Font("SansSerif",Font.PLAIN,16));
-  g.drawString("HUD: 32 px corners / 36 px text inset",74,110);
-  g.drawString("TAB: 48 px corners",660,140);
-  g.drawString("Title and player list have reserved space",620,180);
+  g.drawString("HUD",52,80);g.drawString("TAB player list",572,80);
+  g.drawString("Date and server data",105,245);
+  g.drawString("Players",785,245);
   g.dispose();ImageIO.write(preview,"png",Path.of("art/frame-layout-preview.png").toFile());
  }
 }
