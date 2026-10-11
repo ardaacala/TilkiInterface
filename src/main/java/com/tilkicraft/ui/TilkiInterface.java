@@ -20,6 +20,7 @@ public final class TilkiInterface extends JavaPlugin implements Listener, Comman
     private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd/MM/yy HH:mm").withZone(ZoneId.of("Europe/Istanbul"));
     private final Map<UUID, Panel> panels = new HashMap<>();
     private final Set<UUID> ready = new HashSet<>(), hidden = new HashSet<>();
+    private final Properties tabFrameLayouts = new Properties();
     private Object authApi, economy, chat;
     private Method auth, unrestricted, placeholder, balance, rankPrefix, primaryGroup;
     private String url;
@@ -64,6 +65,10 @@ public final class TilkiInterface extends JavaPlugin implements Listener, Comman
     @Override public void onEnable() {
         migrateLegacyConfig();
         saveDefaultConfig();
+        try(var input=getResource("tab-frame-layouts.properties")) {
+            if(input==null)throw new IOException("missing resource");
+            tabFrameLayouts.load(input);
+        } catch(IOException ex) { getLogger().severe("TAB frame layouts could not be loaded: "+ex.getMessage()); }
         bindHooks();
         Bukkit.getScheduler().runTask(this,this::bindHooks);
         readPack();
@@ -133,6 +138,13 @@ public final class TilkiInterface extends JavaPlugin implements Listener, Comman
             getConfig().set("sidebar.frame",null);
             getConfig().set("layout.logos-only-v6",true);saveConfig();
         }
+        if(!getConfig().getBoolean("layout.tab-frame-v7",false)) {
+            getConfig().set("layout.previous-tab-header-v7",getConfig().getStringList("tab.header"));
+            getConfig().set("layout.previous-tab-footer-v7",getConfig().getStringList("tab.footer"));
+            getConfig().set("tab.header",Arrays.asList(FrameGeometry.HEADER.split("\n",-1)));
+            getConfig().set("tab.footer",Arrays.asList(FrameGeometry.FOOTER.split("\n",-1)));
+            getConfig().set("layout.tab-frame-v7",true);saveConfig();
+        }
         if (!getConfig().getBoolean("layout.compact-v2",false)) {
             List<String> lines=new ArrayList<>(getConfig().getStringList("sidebar.lines"));
             lines.removeIf(line->line.contains("{kills}") || line.contains("{deaths}"));
@@ -146,9 +158,9 @@ public final class TilkiInterface extends JavaPlugin implements Listener, Comman
             getConfig().set("sidebar.lines",lines); getConfig().set("layout.compact-v2",true); saveConfig();
         }
         String previousUrl=getConfig().getString("pack.url","");
-        if (previousUrl.startsWith("https://github.com/ardaacala/TilkiInterface/releases/download/") && !previousUrl.contains("/v1.4.4/")) {
-            getConfig().set("pack.url","https://github.com/ardaacala/TilkiInterface/releases/download/v1.4.4/TilkiInterface-ResourcePack.zip");
-            getConfig().set("pack.sha1","11d1c862803c42b3b50e4b3df10516ce099cd9e4"); saveConfig();
+        if (previousUrl.startsWith("https://github.com/ardaacala/TilkiInterface/releases/download/") && !previousUrl.contains("/v1.4.5/")) {
+            getConfig().set("pack.url","https://github.com/ardaacala/TilkiInterface/releases/download/v1.4.5/TilkiInterface-ResourcePack.zip");
+            getConfig().set("pack.sha1","95ae8c559b1d9314ae30102c1036a5b3de1d24ee"); saveConfig();
         }
         url=getConfig().getString("pack.url","").trim(); hash=null;
         if (url.isEmpty()) return;
@@ -234,7 +246,9 @@ public final class TilkiInterface extends JavaPlugin implements Listener, Comman
             }
             Map<String,String> values=values(player);
             if (getConfig().getBoolean("tab.enabled",true)) {
-                values.put("tab-logo",ready.contains(id)?"§f\uEA02":"");
+                int visible=(int)Bukkit.getOnlinePlayers().stream().filter(player::canSee).count();
+                int columns=FrameGeometry.columns(visible),rows=FrameGeometry.rows(visible);
+                values.put("tab-frame",ready.contains(id)?"§f"+tabFrameLayouts.getProperty(columns+"."+rows,""):"");
                 String header=String.join("\n",getConfig().getStringList("tab.header"));
                 String footer=String.join("\n",getConfig().getStringList("tab.footer"));
                 if (header.isEmpty()) header=FrameGeometry.HEADER;
