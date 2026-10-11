@@ -44,6 +44,10 @@ class BuildLogoAssets {
   try(var files=Files.list(textures)) {
    for(Path file:files.filter(p->p.getFileName().toString().matches("(sidebar_frame.*|tab_.*)\\.png")&&!p.getFileName().toString().equals("tab_logo.png")).toList())Files.delete(file);
   }
+  Path rejectedFrames=textures.resolve("tab_frame");
+  if(Files.isDirectory(rejectedFrames))try(var files=Files.walk(rejectedFrames)) {
+   for(Path file:files.sorted(java.util.Comparator.reverseOrder()).toList())Files.delete(file);
+  }
   Path hd=textures.resolve("hd");
   if(Files.isDirectory(hd)) {
    try(var files=Files.list(hd)) {for(Path file:files.toList())Files.delete(file);}
