@@ -26,12 +26,6 @@ class BuildInterfacePack {
         g.setColor(new Color(255,255,255,highlight?35:15)); g.drawLine(6,3,195,3);
         g.dispose(); return image;
     }
-    static BufferedImage sidebarFrame(int width) {
-        BufferedImage frame=new BufferedImage(width,126,BufferedImage.TYPE_INT_ARGB);Graphics2D p=frame.createGraphics();
-        p.setColor(new Color(78,35,12));p.drawRect(0,0,width-1,125);p.setColor(new Color(255,151,38));p.drawRect(1,1,width-3,123);
-        p.setColor(new Color(255,207,108));for(int x:new int[]{1,width-8})for(int y:new int[]{1,118})p.fillRect(x,y,7,7);
-        p.setColor(new Color(121,58,17));for(int x:new int[]{3,width-6})for(int y:new int[]{3,120})p.fillRect(x,y,3,3);p.dispose();return frame;
-    }
     public static void main(String[] args) throws Exception {
         if(args.length<1 || args.length>2) throw new IllegalArgumentException("Original logo PNG and optional fox mascot PNG required");
         BufferedImage source=ImageIO.read(Path.of(args[0]).toFile());
@@ -48,23 +42,16 @@ class BuildInterfacePack {
         Graphics2D mascotGraphics=smallMascot.createGraphics();mascotGraphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION,RenderingHints.VALUE_INTERPOLATION_BICUBIC);
         mascotGraphics.drawImage(mascot,0,0,128,128,null);mascotGraphics.dispose();smallMascot.setRGB(127,0,0x01ffffff);
         png("assets/tilkiinterface/textures/font/mascot.png",smallMascot);
-        png("assets/tilkiinterface/textures/font/sidebar_frame.png",sidebarFrame(128));
         write("pack.mcmeta","{\"pack\":{\"pack_format\":46,\"description\":\"TilkiCraft - orange fox interface | 1.21.4\"}}\n");
         write("assets/tilkiinterface/font/ui.json","""
             {"providers":[
               {"type":"bitmap","file":"tilkiinterface:font/logo.png","height":64,"ascent":44,"chars":["\uEA00"]},
               {"type":"bitmap","file":"tilkiinterface:font/mascot.png","height":28,"ascent":28,"chars":["\uEA01"]},
               {"type":"bitmap","file":"tilkiinterface:font/logo.png","height":40,"ascent":30,"chars":["\uEA02"]},
-              {"type":"bitmap","file":"tilkiinterface:font/sidebar_frame.png","height":126,"ascent":7,"chars":["\uEA03"]},
               {"type":"space","advances":{"\uEA04":-129,"\uEA05":50,"\uEA07":4,"\uEA13":-145,"\uEA14":58,"\uEA15":-161,"\uEA16":66,"\uEA17":-193,"\uEA18":82}}
             ]}
             """);
         java.util.List<String> extras=new java.util.ArrayList<>();
-        int[] sidebarWidths={144,160,192};
-        for(int i=0;i<sidebarWidths.length;i++) {
-            String path="sidebar_frame_"+sidebarWidths[i];png("assets/tilkiinterface/textures/font/"+path+".png",sidebarFrame(sidebarWidths[i]));
-            extras.add("{\"type\":\"bitmap\",\"file\":\"tilkiinterface:font/"+path+".png\",\"height\":126,\"ascent\":7,\"chars\":[\""+(char)(0xea10+i)+"\"]}");
-        }
         String[] symbols={"online","ping","player","rank","money","island","time"};
         for(int i=0;i<symbols.length;i++) {
             BufferedImage icon=new BufferedImage(16,16,BufferedImage.TYPE_INT_ARGB); Graphics2D p=icon.createGraphics(); p.scale(2,2);
@@ -80,20 +67,6 @@ class BuildInterfacePack {
             }
             p.dispose();png("assets/tilkiinterface/textures/font/icon_"+symbols[i]+".png",icon);
             extras.add("{\"type\":\"bitmap\",\"file\":\"tilkiinterface:font/icon_"+symbols[i]+".png\",\"height\":8,\"ascent\":7,\"chars\":[\""+(char)(0xea20+i)+"\"]}");
-        }
-        for(int variant=0;variant<10;variant++) {
-            int width=192+variant*64;
-            for(int rows=1;rows<=20;rows++) {
-                int height=((64+rows*9+3)/4)*4;
-                BufferedImage tab=new BufferedImage(width/4,height/4,BufferedImage.TYPE_INT_ARGB);Graphics2D p=tab.createGraphics();
-                p.setColor(new Color(255,155,40));p.drawLine(0,0,width/4-1,0);p.drawLine(0,0,0,height/4-1);p.drawLine(width/4-1,0,width/4-1,height/4-1);
-                p.setColor(new Color(255,220,120));p.fillRect(0,0,2,2);p.fillRect(width/4-2,0,2,2);p.dispose();
-                String name="tab_"+variant+"_"+rows;png("assets/tilkiinterface/textures/font/"+name+".png",tab);
-                extras.add("{\"type\":\"bitmap\",\"file\":\"tilkiinterface:font/"+name+".png\",\"height\":"+height+",\"ascent\":7,\"chars\":[\""+(char)(0xec00+variant*20+rows-1)+"\"]}");
-            }
-            BufferedImage bottom=new BufferedImage(width/4,2,BufferedImage.TYPE_INT_ARGB);Graphics2D p=bottom.createGraphics();p.setColor(new Color(255,155,40));p.fillRect(0,1,width/4,1);p.setColor(new Color(255,220,120));p.fillRect(0,0,2,2);p.fillRect(width/4-2,0,2,2);p.dispose();
-            png("assets/tilkiinterface/textures/font/tab_bottom_"+variant+".png",bottom);
-            extras.add("{\"type\":\"bitmap\",\"file\":\"tilkiinterface:font/tab_bottom_"+variant+".png\",\"height\":8,\"ascent\":7,\"chars\":[\""+(char)(0xed00+variant)+"\"]}");
         }
         Path fontPath=ROOT.resolve("assets/tilkiinterface/font/ui.json");String definition=Files.readString(fontPath);int end=definition.lastIndexOf(']');
         Files.writeString(fontPath,definition.substring(0,end)+","+String.join(",",extras)+definition.substring(end));

@@ -25,7 +25,6 @@ public final class TilkiInterface extends JavaPlugin implements Listener, Comman
     private String url;
     private byte[] hash;
     private boolean authRequired;
-    private final Properties frameLayouts=new Properties();
     private static final class Panel {
         final Scoreboard previous, board;
         final Objective objective;
@@ -65,8 +64,6 @@ public final class TilkiInterface extends JavaPlugin implements Listener, Comman
     @Override public void onEnable() {
         migrateLegacyConfig();
         saveDefaultConfig();
-        try(var input=getResource("frame-layouts.properties")) { frameLayouts.load(input); }
-        catch(Exception ex) { getLogger().severe("HD frame layouts could not be loaded: "+ex.getMessage()); }
         bindHooks();
         Bukkit.getScheduler().runTask(this,this::bindHooks);
         readPack();
@@ -128,6 +125,14 @@ public final class TilkiInterface extends JavaPlugin implements Listener, Comman
                 getConfig().set("tab.header",Arrays.asList(FrameGeometry.HEADER.split("\n",-1)));
             getConfig().set("layout.logo-crest-v5",true);saveConfig();
         }
+        if(!getConfig().getBoolean("layout.logos-only-v6",false)) {
+            getConfig().set("layout.previous-tab-header-v6",getConfig().getStringList("tab.header"));
+            getConfig().set("layout.previous-tab-footer-v6",getConfig().getStringList("tab.footer"));
+            getConfig().set("tab.header",Arrays.asList(FrameGeometry.HEADER.split("\n",-1)));
+            getConfig().set("tab.footer",Arrays.asList(FrameGeometry.FOOTER.split("\n",-1)));
+            getConfig().set("sidebar.frame",null);
+            getConfig().set("layout.logos-only-v6",true);saveConfig();
+        }
         if (!getConfig().getBoolean("layout.compact-v2",false)) {
             List<String> lines=new ArrayList<>(getConfig().getStringList("sidebar.lines"));
             lines.removeIf(line->line.contains("{kills}") || line.contains("{deaths}"));
@@ -141,9 +146,9 @@ public final class TilkiInterface extends JavaPlugin implements Listener, Comman
             getConfig().set("sidebar.lines",lines); getConfig().set("layout.compact-v2",true); saveConfig();
         }
         String previousUrl=getConfig().getString("pack.url","");
-        if (previousUrl.startsWith("https://github.com/ardaacala/TilkiInterface/releases/download/") && !previousUrl.contains("/v1.4.2/")) {
-            getConfig().set("pack.url","https://github.com/ardaacala/TilkiInterface/releases/download/v1.4.2/TilkiInterface-ResourcePack.zip");
-            getConfig().set("pack.sha1","09057a6a9175b324da6740c5c083d9bbcc41e67e"); saveConfig();
+        if (previousUrl.startsWith("https://github.com/ardaacala/TilkiInterface/releases/download/") && !previousUrl.contains("/v1.4.3/")) {
+            getConfig().set("pack.url","https://github.com/ardaacala/TilkiInterface/releases/download/v1.4.3/TilkiInterface-ResourcePack.zip");
+            getConfig().set("pack.sha1","7a3fd45b5d21ecafebe2f7718e16dc056cac7fe5"); saveConfig();
         }
         url=getConfig().getString("pack.url","").trim(); hash=null;
         if (url.isEmpty()) return;
@@ -228,15 +233,8 @@ public final class TilkiInterface extends JavaPlugin implements Listener, Comman
                 panel=new Panel(player,sidebar,Math.min(13,getConfig().getStringList("sidebar.lines").size())); panels.put(id,panel);
             }
             Map<String,String> values=values(player);
-            boolean framed=ready.contains(id) && getConfig().getBoolean("sidebar.frame",true);
             if (getConfig().getBoolean("tab.enabled",true)) {
-                List<? extends Player> visible=Bukkit.getOnlinePlayers().stream().filter(player::canSee).toList();
-                int players=Math.max(1,Math.min(80,visible.size())), columns=(players+19)/20, rows=(players+columns-1)/columns;
-                int longest=visible.stream().mapToInt(p->UiText.tabNameWidth(p.getPlayerListName())).max().orElse(120);
-                int infoWidth=UiText.tabNameWidth(player.getName()+" ┃ "+player.getPing()+" ms");
-                int width=FrameGeometry.tabWidth(columns,longest,infoWidth), variant=(width-192)/64;
-                values.put("tab-frame",ready.contains(id)?"§f"+frameLayouts.getProperty("tab."+variant+"."+rows,""):"&6━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-                values.put("tab-bottom",ready.contains(id)?"§f"+frameLayouts.getProperty("bottom."+variant,""):"&6━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+                values.put("tab-logo",ready.contains(id)?"§f\uEA02":"");
                 String header=String.join("\n",getConfig().getStringList("tab.header"));
                 String footer=String.join("\n",getConfig().getStringList("tab.footer"));
                 if (header.isEmpty()) header=FrameGeometry.HEADER;
@@ -246,16 +244,10 @@ public final class TilkiInterface extends JavaPlugin implements Listener, Comman
             }
             if (panel.objective!=null) {
                 List<String> lines=getConfig().getStringList("sidebar.lines");
-                int widest=lines.stream().map(line->render(player,line,values)).mapToInt(UiText::tabNameWidth).max().orElse(100);
-                int frameWidth=FrameGeometry.hudWidth(widest);
-                String heading="§f"+frameLayouts.getProperty("hud."+frameWidth,"");
-                panel.objective.setDisplayName(ready.contains(id)?(framed?heading:"\uEA01"):render(player,getConfig().getString("sidebar.title","TilkiCraft"),values));
+                panel.objective.setDisplayName(ready.contains(id)?"§f\uEA01":render(player,getConfig().getString("sidebar.title","TilkiCraft"),values));
                 for (int i=0;i<panel.rows.size();i++) {
                     String line=i<lines.size()?render(player,lines.get(i),values):"";
-                    String padding=framed?"\uEA07":"";
-                    if(framed) line=UiText.fit(line,frameWidth-FrameGeometry.HUD_INSET*2);
-                    if(framed && i<lines.size() && lines.get(i).contains("{footer}")) padding=UiText.pixelSpace(Math.max(FrameGeometry.HUD_INSET,(frameWidth-UiText.tabNameWidth(line))/2));
-                    panel.rows.get(i).setPrefix(padding+line);
+                    panel.rows.get(i).setPrefix(line);
                 }
             }
             panel.bar.setVisible(getConfig().getBoolean("top-bar.enabled",true));

@@ -4,12 +4,12 @@ TilkiCraft logosu ve turuncu/koyu kahve temasıyla Spigot **1.21.4**, Java **21*
 
 ## Kurulum
 
-1. Sunucuyu durdur, eski `TilkiStatsHUD-*.jar` ve `TilkiInterface-*.jar` dosyalarını kaldır, `TilkiInterface-1.4.2.jar` dosyasını `plugins` klasörüne koy ve yeniden başlat. Eski `plugins/TilkiStatsHUD/config.yml` dosyası ilk açılışta `plugins/TilkiInterface/config.yml` yoluna kopyalanır. Resmî kaynak paketi bağlantısı otomatik güncellenir.
+1. Sunucuyu durdur, eski `TilkiStatsHUD-*.jar` ve `TilkiInterface-*.jar` dosyalarını kaldır, `TilkiInterface-1.4.3.jar` dosyasını `plugins` klasörüne koy ve yeniden başlat. Eski `plugins/TilkiStatsHUD/config.yml` dosyası ilk açılışta `plugins/TilkiInterface/config.yml` yoluna kopyalanır. Resmî kaynak paketi bağlantısı otomatik güncellenir.
 2. Oyuncu kaynak paketini kabul eder. ZIP GitHub'dan otomatik indirilir; sunucu klasörüne ZIP koymak gerekmez.
 3. AuthMe varsa panel yalnızca başarılı girişten sonra açılır. AuthMe yoksa normal açılır.
 4. `/tilkiui` veya `/istatistik`: paneli/üst şeridi aç-kapat. `/tilkiui reload`: yönetici ayar yenileme.
 
-Paket: https://github.com/ardaacala/TilkiInterface/releases/tag/v1.4.2
+Paket: https://github.com/ardaacala/TilkiInterface/releases/tag/v1.4.3
 
 ## Gösterilen bilgiler
 
@@ -62,8 +62,8 @@ Atlas sınırına uygun 4x çerçeve parçaları, alt yazıda font ölçülerine
 
 Bu bölüm eski 1.3.0 sürümünü açıklar. Güncel sürümde genel font seçimi ve Noto dosyaları kaldırılmıştır.
 
-## 1.4.2 — Hafif logo çerçeveleri
+## 1.4.3 — Çerçevesiz logolar
 
-HUD üst kenarına [tilki başı](art/hud-fox-head.png), TAB üst kenarına TilkiCraft logosu çerçevenin bir parçası olarak yerleştirilir. Önizleme: [frame-layout-preview.png](art/frame-layout-preview.png). İnce, kesintisiz kenarlar oyuncu listesi büyüdüğünde belirgin tekrar oluşturmaz. Genel yazı fontu Minecraft varsayılanında kalır.
+HUD ve TAB çerçeveleri kaldırıldı. HUD üzerinde küçük [tilki başı](art/hud-fox-head.png) bulunur. TAB üzerinde yazılardan ayrı bir satırda [TilkiCraft logosu](art/tab-playerlist-logo.png) gösterilir. [Önizleme](art/logo-layout-preview.png) tasarım amaçlıdır; oyun ekran görüntüsü değildir. ESC logosu, rozetler ve diğer tema varlıkları korunur. Genel yazı fontu birleşik paketteki ASCII atlasından gelir.
 
-Paket yeniden üretimi: Gson classpath'i ile `tools/BuildHdAssets.java art/hud-fox-head.png resourcepack/assets/tilkiinterface/textures/font/logo.png` çalıştırılır. Araç atlas sınırına uygun küçük parçaları, düzen özelliklerini ve ZIP/SHA1 dosyalarını üretir.
+Paket yeniden üretimi: Gson classpath'i ile `tools/BuildLogoAssets.java art/hud-fox-head.png art/tab-playerlist-logo.png` çalıştırılır. Araç eski çerçeve varlıklarını siler ve ZIP/SHA1 dosyalarını üretir.
