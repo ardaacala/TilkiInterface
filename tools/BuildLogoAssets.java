@@ -9,8 +9,16 @@ import javax.imageio.ImageIO;
 /** Keeps the ESC logo and panel icons, replacing frame glyphs with two small logos. */
 class BuildLogoAssets {
  static final Path ROOT=Path.of("resourcepack");
+ static BufferedImage transparentEdgeBackground(BufferedImage input) {
+  if(((input.getRGB(0,0)>>>24)&255)<32)return input;
+  int width=input.getWidth(),height=input.getHeight(),background=input.getRGB(0,0),br=(background>>16)&255,bg=(background>>8)&255,bb=background&255;
+  boolean[] outside=new boolean[width*height];java.util.ArrayDeque<Point> queue=new java.util.ArrayDeque<>();
+  for(int x=0;x<width;x++){queue.add(new Point(x,0));queue.add(new Point(x,height-1));}for(int y=0;y<height;y++){queue.add(new Point(0,y));queue.add(new Point(width-1,y));}
+  while(!queue.isEmpty()) {Point point=queue.removeFirst();int x=point.x,y=point.y,index=y*width+x;if(outside[index])continue;int pixel=input.getRGB(x,y),r=(pixel>>16)&255,g=(pixel>>8)&255,b=pixel&255;if(Math.max(Math.max(Math.abs(r-br),Math.abs(g-bg)),Math.abs(b-bb))>30)continue;outside[index]=true;if(x>0)queue.add(new Point(x-1,y));if(x+1<width)queue.add(new Point(x+1,y));if(y>0)queue.add(new Point(x,y-1));if(y+1<height)queue.add(new Point(x,y+1));}
+  BufferedImage output=new BufferedImage(width,height,BufferedImage.TYPE_INT_ARGB);for(int y=0;y<height;y++)for(int x=0;x<width;x++)if(!outside[y*width+x])output.setRGB(x,y,input.getRGB(x,y)|0xff000000);return output;
+ }
  static BufferedImage scaled(Path source,int width,int height) throws Exception {
-  BufferedImage input=ImageIO.read(source.toFile());
+  BufferedImage input=transparentEdgeBackground(ImageIO.read(source.toFile()));
   if(input==null)throw new IllegalArgumentException("Invalid image: "+source);
   BufferedImage output=new BufferedImage(width,height,BufferedImage.TYPE_INT_ARGB);
   Graphics2D g=output.createGraphics();
@@ -31,6 +39,7 @@ class BuildLogoAssets {
   Path textures=ROOT.resolve("assets/tilkiinterface/textures/font");
   ImageIO.write(scaled(Path.of(args[0]),128,256),"png",textures.resolve("mascot.png").toFile());
   ImageIO.write(scaled(Path.of(args[1]),128,128),"png",textures.resolve("tab_logo.png").toFile());
+  ImageIO.write(scaled(Path.of(args[1]),128,128),"png",textures.resolve("logo.png").toFile());
   // The old frame textures and font providers must not inflate the second download.
   try(var files=Files.list(textures)) {
    for(Path file:files.filter(p->p.getFileName().toString().matches("(sidebar_frame.*|tab_.*)\\.png")&&!p.getFileName().toString().equals("tab_logo.png")).toList())Files.delete(file);

@@ -14,10 +14,9 @@ class BuildEscFrame {
     static final String BOTTOM_GLYPH = "\uEA06";
     static final String REWIND_GLYPH = "\uEA0A";
 
-    static BufferedImage frame(Path artwork, Path logoPath) throws Exception {
+    static BufferedImage frame(Path artwork) throws Exception {
         BufferedImage source = ImageIO.read(artwork.toFile());
-        BufferedImage logo = ImageIO.read(logoPath.toFile());
-        if (source == null || logo == null) throw new IllegalArgumentException("Invalid frame or logo PNG");
+        if (source == null) throw new IllegalArgumentException("Invalid frame PNG");
         BufferedImage result = new BufferedImage(256, 278, BufferedImage.TYPE_INT_ARGB);
         // Keep a 212-pixel clear center for the native 204-pixel-wide pause buttons.
         // Compress only the decorative side margins of the generated square artwork.
@@ -33,17 +32,6 @@ class BuildEscFrame {
                 result.setRGB(x, y, source.getRGB(Math.min(sx, source.getWidth()-1), sy));
             }
         }
-        Graphics2D g = result.createGraphics();
-        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-        // The existing TilkiCraft logo remains the menu's focal point, in front of the top rail.
-        g.drawImage(logo, 89, 0, 78, 78, null);
-        g.setFont(new Font("SansSerif", Font.BOLD, 9));
-        String welcome = "TILKICRAFT'A HOŞ GELDİN!";
-        FontMetrics metrics = g.getFontMetrics();
-        int tx = (256 - metrics.stringWidth(welcome)) / 2;
-        g.setColor(new Color(19, 10, 5));g.drawString(welcome, tx+1, 253);
-        g.setColor(new Color(255, 170, 48));g.drawString(welcome, tx, 252);
-        g.dispose();
         // Force full-cell glyph width without adding visible side pixels.
         result.setRGB(0, 0, 0x01ffffff);
         result.setRGB(255, 0, 0x01ffffff);
@@ -51,11 +39,11 @@ class BuildEscFrame {
     }
 
     public static void main(String[] args) throws Exception {
-        if (args.length != 2) throw new IllegalArgumentException("Frame source and TilkiCraft logo PNG required");
+        if (args.length != 1) throw new IllegalArgumentException("ESC frame source PNG required");
         Path texture = ROOT.resolve("assets/tilkiinterface/textures/font/esc_frame.png");
         Path bottomTexture = ROOT.resolve("assets/tilkiinterface/textures/font/esc_frame_bottom.png");
         Files.createDirectories(texture.getParent());
-        BufferedImage image = frame(Path.of(args[0]), Path.of(args[1]));
+        BufferedImage image = frame(Path.of(args[0]));
         BufferedImage top=new BufferedImage(256,256,BufferedImage.TYPE_INT_ARGB),bottom=new BufferedImage(256,22,BufferedImage.TYPE_INT_ARGB);
         Graphics2D topGraphics=top.createGraphics();topGraphics.drawImage(image,0,0,null);topGraphics.dispose();
         Graphics2D bottomGraphics=bottom.createGraphics();bottomGraphics.drawImage(image,0,0,256,22,0,256,256,278,null);bottomGraphics.dispose();

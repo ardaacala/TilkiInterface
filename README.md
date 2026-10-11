@@ -4,12 +4,12 @@ TilkiCraft logosu ve turuncu/koyu kahve temasıyla Spigot **1.21.4**, Java **21*
 
 ## Kurulum
 
-1. Sunucuyu durdur, eski `TilkiStatsHUD-*.jar` ve `TilkiInterface-*.jar` dosyalarını kaldır, `TilkiInterface-1.4.5.jar` dosyasını `plugins` klasörüne koy ve yeniden başlat. Eski `plugins/TilkiStatsHUD/config.yml` dosyası ilk açılışta `plugins/TilkiInterface/config.yml` yoluna kopyalanır. Resmî kaynak paketi bağlantısı otomatik güncellenir.
+1. Sunucuyu durdur, eski `TilkiStatsHUD-*.jar` ve `TilkiInterface-*.jar` dosyalarını kaldır, `TilkiInterface-1.4.6.jar` dosyasını `plugins` klasörüne koy ve yeniden başlat. Eski `plugins/TilkiStatsHUD/config.yml` dosyası ilk açılışta `plugins/TilkiInterface/config.yml` yoluna kopyalanır. Resmî kaynak paketi bağlantısı otomatik güncellenir.
 2. Oyuncu kaynak paketini kabul eder. ZIP GitHub'dan otomatik indirilir; sunucu klasörüne ZIP koymak gerekmez.
 3. AuthMe varsa panel yalnızca başarılı girişten sonra açılır. AuthMe yoksa normal açılır.
 4. `/tilkiui` veya `/istatistik`: paneli/üst şeridi aç-kapat. `/tilkiui reload`: yönetici ayar yenileme.
 
-Paket: https://github.com/ardaacala/TilkiInterface/releases/tag/v1.4.5
+Paket: https://github.com/ardaacala/TilkiInterface/releases/tag/v1.4.6
 
 ## Gösterilen bilgiler
 
@@ -79,3 +79,9 @@ Paket yeniden üretiminde önce `BuildInterfacePack`, sonra `BuildLogoAssets`, s
 ESC çerçevesinin alt kirişi bütün duraklatma menüsünü, “Bağlantıyı Kes” düğmesi dahil, çevreleyecek biçimde uzatıldı. 256 piksel atlas sınırı için alt bölüm ayrı glif olarak çizilir; iki parça Minecraft GUI ölçeğiyle birlikte büyüyüp küçülür. Seçenek ekranlarında düğmelerin yanında kaydırıcılar, onay kutuları ve metin alanları da ahşap/turuncu temayı kullanır.
 
 TAB oyuncu listesi 1–80 görünür oyuncu için 1–4 sütun ve satır sayısına göre 42 farklı geometriden uygun olanı seçer. TilkiCraft logosu üst kirişe bağlıdır; orta alan şeffaftır. Paket üretim zincirinin son adımları `BuildOptionsTheme`, `BuildEscFrame` ve `BuildTabFrame` araçlarıdır. [ESC önizlemesi](art/esc-frame-preview.png) ile [TAB önizlemesi](art/tab-frame-preview.png) tasarım kontrolüdür.
+
+## 1.4.6 — Üç tilkili ESC tasarımı ve HD logo
+
+ESC ekranında üç tilkili büyük TilkiCraft başlığı, fenerli ahşap yan raylar, yaprak/taş süsleri ve `/discord` bilgili alt panel kullanılır. Merkez şeffaftır; Minecraft düğmeleri, işlevleri ve oyuncunun seçtiği dil değişmeden burada çizilir. [ESC görsel kaynağı](art/esc-menu-frame-source.png) gönderilen konsepte göre imagegen ile şeffaf arayüz varlığına dönüştürüldü.
+
+[HD logo kaynağı](art/tilkicraft-hd-logo-source.png) beyaz zemini kenarlardan temizlenerek ESC dışındaki tam logo dokularında kullanılır. Üretim sırası: `BuildLogoAssets art/hud-fox-head.png art/tilkicraft-hd-logo-source.png`, `BuildOptionsTheme`, `BuildEscFrame art/esc-menu-frame-source.png`, ardından `BuildTabFrame art/esc-frame-source.png resourcepack/assets/tilkiinterface/textures/font/tab_logo.png`.

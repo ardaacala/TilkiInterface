@@ -158,9 +158,9 @@ public final class TilkiInterface extends JavaPlugin implements Listener, Comman
             getConfig().set("sidebar.lines",lines); getConfig().set("layout.compact-v2",true); saveConfig();
         }
         String previousUrl=getConfig().getString("pack.url","");
-        if (previousUrl.startsWith("https://github.com/ardaacala/TilkiInterface/releases/download/") && !previousUrl.contains("/v1.4.5/")) {
-            getConfig().set("pack.url","https://github.com/ardaacala/TilkiInterface/releases/download/v1.4.5/TilkiInterface-ResourcePack.zip");
-            getConfig().set("pack.sha1","95ae8c559b1d9314ae30102c1036a5b3de1d24ee"); saveConfig();
+        if (previousUrl.startsWith("https://github.com/ardaacala/TilkiInterface/releases/download/") && !previousUrl.contains("/v1.4.6/")) {
+            getConfig().set("pack.url","https://github.com/ardaacala/TilkiInterface/releases/download/v1.4.6/TilkiInterface-ResourcePack.zip");
+            getConfig().set("pack.sha1","c78c9864583a6d7ed695198b20ff9bcccc4df6a7"); saveConfig();
         }
         url=getConfig().getString("pack.url","").trim(); hash=null;
         if (url.isEmpty()) return;
