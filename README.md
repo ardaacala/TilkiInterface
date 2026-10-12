@@ -4,12 +4,12 @@ TilkiCraft logosu ve turuncu/koyu kahve temasıyla Spigot **1.21.4**, Java **21*
 
 ## Kurulum
 
-1. Sunucuyu durdur, eski `TilkiStatsHUD-*.jar` ve `TilkiInterface-*.jar` dosyalarını kaldır, `TilkiInterface-1.4.7.jar` dosyasını `plugins` klasörüne koy ve yeniden başlat. Eski `plugins/TilkiStatsHUD/config.yml` dosyası ilk açılışta `plugins/TilkiInterface/config.yml` yoluna kopyalanır. Resmî kaynak paketi bağlantısı otomatik güncellenir.
+1. Sunucuyu durdur, eski `TilkiStatsHUD-*.jar` ve `TilkiInterface-*.jar` dosyalarını kaldır, `TilkiInterface-1.4.8.jar` dosyasını `plugins` klasörüne koy ve yeniden başlat. Eski `plugins/TilkiStatsHUD/config.yml` dosyası ilk açılışta `plugins/TilkiInterface/config.yml` yoluna kopyalanır. Resmî kaynak paketi bağlantısı otomatik güncellenir.
 2. Oyuncu kaynak paketini kabul eder. ZIP GitHub'dan otomatik indirilir; sunucu klasörüne ZIP koymak gerekmez.
 3. AuthMe varsa panel yalnızca başarılı girişten sonra açılır. AuthMe yoksa normal açılır.
 4. `/tilkiui` veya `/istatistik`: paneli/üst şeridi aç-kapat. `/tilkiui reload`: yönetici ayar yenileme.
 
-Paket: https://github.com/ardaacala/TilkiInterface/releases/tag/v1.4.7
+Paket: https://github.com/ardaacala/TilkiInterface/releases/tag/v1.4.8
 
 ## Gösterilen bilgiler
 
@@ -21,7 +21,7 @@ Ada seviyesi varsayılan olarak `%superior_island_level_format%` ile okunur. `is
 
 ## ESC ekranı
 
-Kaynak paketi, ESC'nin `menu.game` başlığı üzerinden TilkiCraft logolu ahşap bir çerçeve çizer ve mevcut düğmelerin dokusunu turuncu/kahve temayla değiştirir. Çerçevenin ortası 204 piksellik mevcut düğmeler için açıktır. Düğmelerin işlevi ve dizilimi Minecraft'a aittir. Yeni düğme, tıklanabilir /vote alanı veya referanstaki birebir özel yerleşim vanilla Spigot ile eklenmez; istemci modu gerekir. Çerçeveli başlık Türkçe, İngilizce ABD ve İngilizce UK dillerinde tanımlıdır.
+Kaynak paketi ESC menüsünü [referanstaki](art/esc-menu-reference.jpg) gibi tilkili logo, fenerli ahşap pano, turuncu çerçeveli ahşap düğmeler ve `/discord` bilgili alt tabela ile kaplar. Çerçeve, “Oyuna Dön” düğmesinin genişliği sıfır olan etiketidir; bu yüzden her GUI ölçeğinde ve pencere oranında düğmelerle birlikte konumlanır. Sabit konumdaki `menu.game` başlığı gizlenir. Sekiz düğme yuvası şeffaftır: düğmelerin işlevi, üzerine gelme görünümü ve yazısı Minecraft'a aittir. Ortadaki düğmeler sürüme veya sunucuya göre değişse de (ör. Sunucu Bağlantıları, LAN'a Aç) aynı yuvalarda çizilir. Yeni düğme veya tıklanabilir özel alan vanilla Spigot ile eklenmez; istemci modu gerekir. Çerçeve Türkçe, İngilizce ABD ve İngilizce UK dillerinde tanımlıdır; Türkçe'de düğme adları referanstaki gibidir.
 
 Düğme dokuları genel Minecraft widget'larıdır: seçenekler gibi başka ekranlarda da tema görünür. Logo kaynağı `CombatGuns/tilkicraft_logo.png`; tasarım değiştirilmeden 128x128'e ölçeklenir. Bitmap hücreleri 256x256 font atlası sınırını aşmaz. Unicode font desteği vardır.
 
@@ -79,6 +79,12 @@ Paket yeniden üretiminde önce `BuildInterfacePack`, sonra `BuildLogoAssets`, s
 ESC çerçevesinin alt kirişi bütün duraklatma menüsünü, “Bağlantıyı Kes” düğmesi dahil, çevreleyecek biçimde uzatıldı. 256 piksel atlas sınırı için alt bölüm ayrı glif olarak çizilir; iki parça Minecraft GUI ölçeğiyle birlikte büyüyüp küçülür. Seçenek ekranlarında düğmelerin yanında kaydırıcılar, onay kutuları ve metin alanları da ahşap/turuncu temayı kullanır.
 
 TAB oyuncu listesi 1–80 görünür oyuncu için 1–4 sütun ve satır sayısına göre 42 farklı geometriden uygun olanı seçer. TilkiCraft logosu üst kirişe bağlıdır; orta alan şeffaftır. Paket üretim zincirinin son adımları `BuildOptionsTheme`, `BuildEscFrame` ve `BuildTabFrame` araçlarıdır. [ESC önizlemesi](art/esc-frame-preview.png) ile [TAB önizlemesi](art/tab-frame-preview.png) tasarım kontrolüdür.
+
+## 1.4.8 — Düğmelere bağlı ESC panosu
+
+1.21 duraklatma ekranında başlık her zaman y=40'ta, düğmeler ise ekran yüksekliğinin %25'ine hizalıdır. Bu yüzden başlığa bağlı eski çerçeve GUI ölçeği değişince düğmelerden kayıyordu. Yeni çerçeve “Oyuna Dön” etiketine bağlıdır: etiketin karakter genişlikleri toplamı sıfırdır, Minecraft onu kırpmadan düğmenin ortasında çizer. Çerçeve 264×236 mantıksal boyuttadır; 256 piksel atlas sınırı için 3x HD 12 parçaya bölünür. En küçük otomatik GUI yüksekliği olan 240'ta da ekrana tam sığar. Düğme dokuları 600×60 HD nine-slice'tır (200×20, kenar 4).
+
+[Önizleme](art/esc-frame-preview.png) 240, 270 ve 360 GUI yüksekliğindeki vanilla düzeni simüle eder; oyun ekran görüntüsü değildir. Üretim: Gson classpath'i ile `BuildEscMenu art/esc-menu-frame-source.png ../TilkiResourcePack/overlay/assets/minecraft/textures/font/ascii.png`. Araç düğme dokularını, dil eşlemelerini, ZIP ve SHA-1'i yeniler. `ValidatePack.ps1` etiket genişliğinin sıfır olduğunu ve sekiz düğme yuvasının şeffaf kaldığını kontrol eder.
 
 ## 1.4.7 — Kompakt HD ESC çerçevesi ve sade TAB logosu
 
