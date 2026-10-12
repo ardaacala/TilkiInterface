@@ -7,13 +7,19 @@ foreach ($file in (Get-ChildItem $root -Recurse -File | Where-Object { $_.Extens
     $null = [IO.File]::ReadAllText($file.FullName) | ConvertFrom-Json
 }
 $font = [IO.File]::ReadAllText((Join-Path $root 'assets/tilkiinterface/font/ui.json')) | ConvertFrom-Json
-$logoProviders=@($font.providers | Where-Object { $_.type -eq 'bitmap' -and ($_.chars -contains [string][char]0xea01 -or $_.chars -contains [string][char]0xea02) })
-if($logoProviders.Count -ne 2) { throw 'HUD and TAB need separate logo glyphs' }
-if(!($logoProviders | Where-Object { $_.file -eq 'tilkiinterface:font/mascot.png' -and $_.height -eq 64 }) -or
-   !($logoProviders | Where-Object { $_.file -eq 'tilkiinterface:font/tab_logo.png' -and $_.height -eq 52 })) { throw 'Logo glyph placement invalid' }
+# Forest HUD: eight 9 px stat icons, one sidebar frame glyph, TAB frame pieces with
+# one provider per row position; the old mascot/TAB logo glyphs are gone.
+$icons=@($font.providers | Where-Object { $_.type -eq 'bitmap' -and $_.file -like 'tilkiinterface:font/icon_*' })
+if($icons.Count -ne 8 -or ($icons | Where-Object { $_.height -ne 9 -or $_.ascent -ne 8 })) { throw 'Stat icons must be eight one-line glyphs' }
+$sidebar=@($font.providers | Where-Object { $_.file -eq 'tilkiinterface:font/sidebar_logo.png' })
+if($sidebar.Count -ne 1 -or $sidebar[0].chars[0] -ne [string][char]0xea28) { throw 'Sidebar logo glyph missing' }
+$rowPieces=@($font.providers | Where-Object { $_.file -like 'tilkiinterface:font/hud/row_*' })
+if($rowPieces.Count -ne 60) { throw 'TAB rows need 20 positions of three pieces' }
+if($font.providers | Where-Object { $_.file -match '(mascot|tab_logo)\.png$' }) { throw 'Old HUD/TAB logo glyph remains' }
+if(!(Test-Path (Join-Path $projectRoot 'src/main/resources/hud-layout.properties'))) { throw 'Plugin HUD layout missing' }
 if($font.providers | Where-Object { $_.file -eq 'tilkiinterface:font/esc_frame.png' }) { throw 'Title-anchored ESC frame remains' }
 if($font.providers | Where-Object { $_.file -match '/tab_frame/' }) { throw 'Rejected TAB frame provider remains' }
-if($font.providers | Where-Object { $_.file -match '(/hd/|sidebar_frame|/tab_[0-9])' }) { throw 'Legacy frame provider remains' }
+if($font.providers | Where-Object { $_.file -match '(/tab_frame/|/tab_[0-9])' }) { throw 'Legacy frame provider remains' }
 foreach ($provider in $font.providers) {
     if ($provider.type -ne 'bitmap') { continue }
     $texture = Join-Path $root ('assets/tilkiinterface/textures/' + $provider.file.Substring('tilkiinterface:'.Length))
@@ -36,7 +42,7 @@ foreach($provider in $font.providers) {
     if($provider.type -eq 'space') { foreach($property in $provider.advances.PSObject.Properties) { $escAdvance[[int][char]$property.Name]=[int]$property.Value } }
     elseif($provider.type -eq 'bitmap' -and $provider.file -like 'tilkiinterface:font/esc_menu/*') { $escFont[[int][char]$provider.chars[0]]=$provider }
 }
-if($escFont.Count -ne 13) { throw 'ESC menu needs 12 frame tiles and one label glyph' }
+if($escFont.Count -ne 2) { throw 'ESC menu needs one 1x frame glyph and one label glyph' }
 $escLabel=$null
 foreach ($language in @('tr_tr','en_us','en_gb')) {
     $definition = [IO.File]::ReadAllText((Join-Path $root ('assets/minecraft/lang/'+$language+'.json'))) | ConvertFrom-Json
@@ -66,7 +72,7 @@ foreach($character in $escLabel.ToCharArray()) {
                 if($image.Width -ne $bitmap.Width -or $image.Height -ne $bitmap.Height) { throw 'Overlay ESC tile changes glyph size' }
                 foreach($button in $variant[1]) {
                     for($by=$button[1];$by -lt $button[1]+20;$by++) { for($bx=$button[0];$bx -lt $button[0]+$button[2];$bx++) {
-                        $tx=($bx-$left)*$scale+1;$ty=($by-$top)*$scale+1
+                        $tx=[int][Math]::Floor(($bx-$left+0.5)*$scale);$ty=[int][Math]::Floor(($by-$top+0.5)*$scale)
                         if($tx -ge 0 -and $ty -ge 0 -and $tx -lt $image.Width -and $ty -lt $image.Height -and $image.GetPixel($tx,$ty).A -ge 26) { throw "ESC frame covers a pause button at $bx,$by" }
                     } }
                 }
@@ -94,12 +100,12 @@ foreach($state in @('checkbox','checkbox_highlighted','checkbox_selected','check
 $zipPath = Join-Path $projectRoot 'dist/TilkiInterface-ResourcePack.zip'
 $zip = [IO.Compression.ZipFile]::OpenRead($zipPath)
 try {
-    if (!$zip.GetEntry('pack.mcmeta') -or !$zip.GetEntry('assets/minecraft/lang/tr_tr.json') -or !$zip.GetEntry('assets/tilkiinterface/textures/font/esc_menu/r0c0.png') -or !$zip.GetEntry('tilki_icon_menu/assets/tilkiinterface/textures/font/esc_menu/r1c1.png') -or $zip.GetEntry('assets/tilkiinterface/textures/font/esc_frame.png')) { throw 'ZIP layout invalid' }
+    if (!$zip.GetEntry('pack.mcmeta') -or !$zip.GetEntry('assets/minecraft/lang/tr_tr.json') -or !$zip.GetEntry('assets/tilkiinterface/textures/font/esc_menu/r0c0.png') -or !$zip.GetEntry('tilki_icon_menu/assets/tilkiinterface/textures/font/esc_menu/r0c0.png') -or !$zip.GetEntry('assets/tilkiinterface/textures/font/sidebar_logo.png') -or !$zip.GetEntry('assets/minecraft/textures/gui/sprites/icon/ping_5.png') -or $zip.GetEntry('assets/tilkiinterface/textures/font/esc_frame.png')) { throw 'ZIP layout invalid' }
     if($zip.GetEntry('assets/tilkiinterface/textures/font/esc_frame_bottom.png') -or $zip.Entries.FullName | Where-Object { $_ -like 'assets/tilkiinterface/textures/font/tab_frame/*' }) { throw 'Removed frame assets remain in ZIP' }
-    if($zip.Entries.FullName | Where-Object { $_ -like 'assets/tilkiinterface/textures/font/hd/*' -or $_ -like 'assets/tilkiinterface/textures/font/sidebar_frame*' -or $_ -match 'assets/tilkiinterface/textures/font/tab_[0-9]' }) { throw 'Legacy frame texture remains' }
+    if($zip.Entries.FullName | Where-Object { $_ -like 'assets/tilkiinterface/textures/font/hd/*' -or $_ -match 'assets/tilkiinterface/textures/font/tab_[0-9]' }) { throw 'Legacy frame texture remains' }
 } finally { $zip.Dispose() }
 $hash = (Get-FileHash $zipPath -Algorithm SHA1).Hash.ToLowerInvariant()
 if ($hash -ne ([IO.File]::ReadAllText((Join-Path $projectRoot 'dist/resourcepack-sha1.txt'))).Trim()) { throw 'Pack SHA1 mismatch' }
 $config = [IO.File]::ReadAllText((Join-Path $projectRoot 'src/main/resources/config.yml'))
 if (!$config.Contains($hash)) { throw 'Default config SHA1 mismatch' }
-Write-Output 'VALID: HUD/TAB logos, button-anchored zero-width ESC frame with clear button holes for 1.21.4 and 26.2+, vanilla-size buttons, themed options controls, fonts, ZIP and SHA1.'
+Write-Output 'VALID: forest ESC frame (1x, button-anchored, 1.21.4 and 26.2+ holes), sidebar logo and icons, TAB frame pieces, ping bars, kit buttons, fonts, ZIP and SHA1.'

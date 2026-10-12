@@ -20,16 +20,19 @@ import javax.imageio.ImageIO;
  */
 class BuildEscMenu {
     static final Path ROOT = Path.of("resourcepack");
-    static final int S = 3, W = 264, COLS = 4, TILE = W / COLS;
-    static final int[] ROWS = {84, 76, 76};
-    static final int H = 236, TOP = 68, CX = W / 2;
+    // 1x pixel art: one texture pixel per GUI pixel keeps the frame visibly pixelated.
+    static final int S = 1, W = 252, COLS = 1, TILE = W / COLS;
+    static final int H = 226, TOP = 68, CX = W / 2;
+    static final int[] ROWS = {H};
     // Pause grid (1.21): 204/98 px buttons, 20 px tall, 4 px gaps, five rows.
     static final int[][] BUTTONS = {
-        {30, TOP, 204, 20},
-        {30, TOP + 24, 98, 20}, {136, TOP + 24, 98, 20},
-        {30, TOP + 48, 98, 20}, {136, TOP + 48, 98, 20},
-        {30, TOP + 72, 98, 20}, {136, TOP + 72, 98, 20},
-        {30, TOP + 96, 204, 20}};
+        {CX - 102, TOP, 204, 20},
+        {CX - 102, TOP + 24, 98, 20}, {CX + 4, TOP + 24, 98, 20},
+        {CX - 102, TOP + 48, 98, 20}, {CX + 4, TOP + 48, 98, 20},
+        {CX - 102, TOP + 72, 98, 20}, {CX + 4, TOP + 72, 98, 20},
+        {CX - 102, TOP + 96, 204, 20}};
+    // Where the button grid sits in the 1672x941 reference (art/esc-menu-reference-v2.png).
+    static final double REF_LEFT = 459, REF_TOP = 370, REF_SX = (1107 - 459) / 204.0, REF_SY = (757 - 370) / 116.0;
     // 26.2+ replaces the feedback row with four centred 20 px icon buttons
     // (bug, feedback, friends, player reporting) spaced 4 px apart.
     static final int[][] ICON_BUTTONS = {
@@ -44,9 +47,10 @@ class BuildEscMenu {
     static BufferedImage atlas;
 
     public static void main(String[] args) throws Exception {
-        if (args.length < 2) throw new IllegalArgumentException("Usage: BuildEscMenu <esc-menu-frame-source.png> <ascii.png> [extracted gui/sprites dir for preview icons]");
+        if (args.length < 3) throw new IllegalArgumentException("Usage: BuildEscMenu <esc-menu-reference-v2.png> <ui-kit.png> <ascii.png> [extracted gui/sprites dir for preview icons]");
         BufferedImage source = ImageIO.read(Path.of(args[0]).toFile());
-        atlas = ImageIO.read(Path.of(args[1]).toFile());
+        kit = ImageIO.read(Path.of(args[1]).toFile());
+        atlas = ImageIO.read(Path.of(args[2]).toFile());
         if (source == null || atlas == null || atlas.getWidth() != 256) throw new IllegalArgumentException("Invalid frame or ASCII atlas");
         BufferedImage frame = frame(source, BUTTONS), iconFrame = frame(source, ICON_BUTTONS);
         Path textures = ROOT.resolve("assets/tilkiinterface/textures/font/esc_menu");
@@ -126,7 +130,7 @@ class BuildEscMenu {
         Files.writeString(ROOT.resolve("pack.mcmeta"), packMetadata("TilkiCraft - orange fox interface | 1.21.4 - 26.x"));
         buttons();
         writeZip();
-        preview(frame, iconFrame, args.length > 2 ? Path.of(args[2]) : null);
+        preview(frame, iconFrame, args.length > 3 ? Path.of(args[3]) : null);
     }
 
     /**
@@ -168,31 +172,33 @@ class BuildEscMenu {
     }
 
     // ---------------------------------------------------------------- frame art
-    static BufferedImage frame(BufferedImage source, int[][] holes) {
-        BufferedImage canvas = new BufferedImage(W * S, H * S, BufferedImage.TYPE_INT_ARGB);
+    /**
+     * The frame is the user's forest design itself: the reference is cut from its
+     * dark background, its painted buttons are replaced by plain board, and it is
+     * resampled to one texture pixel per GUI pixel. The fox and logo crest is
+     * scaled separately so the whole frame still fits a 240 px tall GUI.
+     */
+    static BufferedImage frame(BufferedImage reference, int[][] holes) {
+        BufferedImage art = cutout(reference);
+        // Board colour from the gaps between the painted buttons.
+        long r = 0, gr = 0, b = 0, n = 0;
+        for (int y = 444; y <= 450; y++) for (int x = 560; x <= 1000; x++) { int p = art.getRGB(x, y); r += (p >> 16) & 255; gr += (p >> 8) & 255; b += p & 255; n++; }
+        int board = 0xff000000 | (int)(r / n) << 16 | (int)(gr / n) << 8 | (int)(b / n);
+        Graphics2D paint = art.createGraphics();
+        paint.setColor(new Color(board, true));
+        paint.fillRect((int)REF_LEFT - 6, (int)REF_TOP - 4, (int)(204 * REF_SX) + 12, (int)(116 * REF_SY) + 8);
+        paint.dispose();
+        BufferedImage canvas = new BufferedImage(W, H, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g = canvas.createGraphics();
-        Random random = new Random(26);
-        board(g, random, 18, 58, W - 36, 132);
-        post(g, random, 8, 54, 12, 150);
-        post(g, random, W - 20, 54, 12, 150);
-        beam(g, random, 2, 52, W - 4, 12);
-        // Artwork from the transparent concept sheet (1254 px square).
-        // Foxes and the logo sit on a leaf bed in the sheet; drop the leaves so
-        // the crops do not show rectangular edges.
-        place(g, leafless(source, 330, 10, 520, 285), 0, 0, 520, 285, 0.13, CX - 37, 0);        // large fox
-        place(g, leafless(source, 70, 225, 230, 200), 0, 0, 230, 200, 0.15, 6, 22);             // left fox
-        place(g, leafless(source, 950, 200, 235, 215), 0, 0, 235, 215, 0.15, W - 41, 20);       // right fox
-        place(g, leafless(source, 280, 285, 690, 155), 0, 0, 690, 155, 0.18, CX - 64, 32);      // TilkiCraft logo
-        place(g, source, 40, 395, 180, 85, 0.15, 0, 50);                 // left beam cap
-        place(g, source, 1030, 395, 185, 85, 0.15, W - 28, 50);          // right beam cap
-        place(g, source, 45, 470, 95, 145, 0.17, 0, 64);                 // left lantern
-        place(g, source, 1115, 470, 100, 145, 0.17, W - 17, 64);         // right lantern
-        place(g, source, 40, 615, 140, 115, 0.18, 2, 98);                // left leaves
-        place(g, source, 1060, 600, 150, 110, 0.18, W - 29, 96);         // right leaves
-        place(g, source, 1120, 740, 100, 100, 0.18, W - 20, 128);        // right leaves, lower
-        place(g, source, 35, 860, 135, 125, 0.17, 0, 158);               // left moss block
-        place(g, source, 1085, 875, 135, 115, 0.17, W - 23, 160);        // right moss block
-        place(g, source, 40, 985, 1200, 230, 0.215, 1, 186);             // welcome sign
+        // Body: top beam down to the support sign, at the button grid's own scale.
+        int beam = 56, bodyLeft = (int)Math.round(REF_LEFT - (CX - 102) * REF_SX), bodyTop = (int)Math.round(REF_TOP - (TOP - beam) * REF_SY);
+        int bodyWidth = (int)Math.round(W * REF_SX), bodyHeight = (int)Math.round((H - beam) * REF_SY);
+        g.drawImage(areaScale(art.getSubimage(bodyLeft, bodyTop, bodyWidth, Math.min(bodyHeight, art.getHeight() - bodyTop)), W, H - beam), 0, beam, null);
+        // Crest: foxes and logo, scaled down to the 60 px above the beam.
+        int crestLeft = 400, crestTop = 55, crestRight = 1180, crestBottom = bodyTop + 6;
+        BufferedImage crest = art.getSubimage(crestLeft, crestTop, crestRight - crestLeft, crestBottom - crestTop);
+        int crestHeight = beam + 4, crestWidth = (int)Math.round(crest.getWidth() * crestHeight / (double)crest.getHeight());
+        g.drawImage(areaScale(crest, crestWidth, crestHeight), (W - crestWidth) / 2, 0, null);
         g.dispose();
         // Native buttons render in these holes; nothing may cover them.
         for (int[] button : holes)
@@ -201,91 +207,27 @@ class BuildEscMenu {
         return canvas;
     }
 
-    static BufferedImage leafless(BufferedImage source, int x, int y, int width, int height) {
+    /** Makes the reference's flat dark background transparent (flood fill from the image border). */
+    static BufferedImage cutout(BufferedImage source) {
+        int width = source.getWidth(), height = source.getHeight(), background = source.getRGB(4, 4);
         BufferedImage result = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-        for (int yy = 0; yy < height; yy++) for (int xx = 0; xx < width; xx++) {
-            int pixel = source.getRGB(x + xx, y + yy), r = (pixel >> 16) & 255, gr = (pixel >> 8) & 255;
-            if (gr <= r + 4 && (pixel >>> 24) > 0) result.setRGB(xx, yy, pixel);
+        boolean[] outside = new boolean[width * height];
+        ArrayDeque<int[]> queue = new ArrayDeque<>();
+        for (int x = 0; x < width; x++) { queue.add(new int[]{x, 0}); queue.add(new int[]{x, height - 1}); }
+        for (int y = 0; y < height; y++) { queue.add(new int[]{0, y}); queue.add(new int[]{width - 1, y}); }
+        while (!queue.isEmpty()) {
+            int[] p = queue.removeFirst(); int x = p[0], y = p[1];
+            if (x < 0 || y < 0 || x >= width || y >= height || outside[y * width + x]) continue;
+            int pixel = source.getRGB(x, y);
+            if (Math.max(Math.abs(((pixel >> 16) & 255) - ((background >> 16) & 255)), Math.max(Math.abs(((pixel >> 8) & 255) - ((background >> 8) & 255)), Math.abs((pixel & 255) - (background & 255)))) > 14) continue;
+            outside[y * width + x] = true;
+            queue.add(new int[]{x + 1, y}); queue.add(new int[]{x - 1, y}); queue.add(new int[]{x, y + 1}); queue.add(new int[]{x, y - 1});
         }
-        // Dark outline pixels only stay next to the coloured artwork they outline.
-        BufferedImage outlined = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-        for (int yy = 0; yy < height; yy++) for (int xx = 0; xx < width; xx++) {
-            int pixel = result.getRGB(xx, yy);
-            if ((pixel >>> 24) == 0) continue;
-            boolean keep = brightness(pixel) > 90;
-            for (int dy = -6; dy <= 6 && !keep; dy++) for (int dx = -6; dx <= 6 && !keep; dx++) {
-                int nx = xx + dx, ny = yy + dy;
-                if (nx >= 0 && ny >= 0 && nx < width && ny < height && (result.getRGB(nx, ny) >>> 24) != 0 && brightness(result.getRGB(nx, ny)) > 90) keep = true;
-            }
-            if (keep) outlined.setRGB(xx, yy, pixel);
-        }
-        result = outlined;
-        // Leaf outlines survive the colour test as thin fragments; keep only real shapes.
-        boolean[] seen = new boolean[width * height];
-        for (int start = 0; start < seen.length; start++) {
-            if (seen[start] || (result.getRGB(start % width, start / width) >>> 24) == 0) continue;
-            List<Integer> part = new ArrayList<>(); ArrayDeque<Integer> queue = new ArrayDeque<>(List.of(start)); seen[start] = true;
-            while (!queue.isEmpty()) {
-                int index = queue.removeFirst(); part.add(index);
-                int px = index % width, py = index / width;
-                for (int dy = -1; dy <= 1; dy++) for (int dx = -1; dx <= 1; dx++) {
-                    int nx = px + dx, ny = py + dy, next = ny * width + nx;
-                    if (nx < 0 || ny < 0 || nx >= width || ny >= height || seen[next] || (result.getRGB(nx, ny) >>> 24) == 0) continue;
-                    seen[next] = true; queue.add(next);
-                }
-            }
-            if (part.size() < 600) for (int index : part) result.setRGB(index % width, index / width, 0);
-        }
+        for (int y = 0; y < height; y++) for (int x = 0; x < width; x++) if (!outside[y * width + x]) result.setRGB(x, y, source.getRGB(x, y) | 0xff000000);
         return result;
     }
 
-    static int brightness(int pixel) { return Math.max((pixel >> 16) & 255, Math.max((pixel >> 8) & 255, pixel & 255)); }
-
-    static void place(Graphics2D g, BufferedImage source, int x, int y, int width, int height, double scale, int dx, int dy) {
-        int tw = (int)Math.round(width * scale * S), th = (int)Math.round(height * scale * S);
-        g.drawImage(areaScale(source.getSubimage(x, y, width, height), tw, th), dx * S, dy * S, null);
-    }
-
     static void px(Graphics2D g, int rgb, int x, int y, int w, int h) { g.setColor(new Color(rgb)); g.fillRect(x, y, w, h); }
-
-    /** Dark horizontal planks behind the buttons. */
-    static void board(Graphics2D g, Random random, int x, int y, int w, int h) {
-        px(g, 0x1b0e07, x * S, y * S, w * S, h * S);
-        int inner = S * 2;
-        for (int plank = 0; plank * 8 < h; plank++) {
-            int top = y * S + inner + plank * 8 * S, height = Math.min(8 * S, (y + h) * S - inner - top);
-            if (height <= 0) break;
-            int base = plank % 2 == 0 ? 0x4a2914 : 0x432411;
-            px(g, base, x * S + inner, top, w * S - 2 * inner, height);
-            for (int streak = 0; streak < w / 3; streak++) {
-                int sx = x * S + inner + random.nextInt(w * S - 2 * inner - 30), sy = top + 2 + random.nextInt(Math.max(1, height - 4));
-                px(g, random.nextBoolean() ? 0x3a1f0f : 0x5a331a, sx, sy, 12 + random.nextInt(40), 1 + random.nextInt(2));
-            }
-            px(g, 0x2a160b, x * S + inner, top + height - 2, w * S - 2 * inner, 2);
-            px(g, 0x63391d, x * S + inner, top, w * S - 2 * inner, 1);
-        }
-        px(g, 0x8a4a1f, x * S + S, y * S + S, w * S - 2 * S, 1);
-    }
-
-    static void post(Graphics2D g, Random random, int x, int y, int w, int h) {
-        px(g, 0x1f1008, x * S, y * S, w * S, h * S);
-        px(g, 0x5e3519, x * S + S, y * S, w * S - 2 * S, h * S);
-        for (int i = 0; i < h / 2; i++) {
-            int sx = x * S + S + random.nextInt(w * S - 3 * S), sy = y * S + random.nextInt(h * S - 20);
-            px(g, random.nextBoolean() ? 0x452612 : 0x7a4824, sx, sy, 2, 10 + random.nextInt(24));
-        }
-        px(g, 0x8a5730, x * S + S, y * S, 2, h * S);
-    }
-
-    static void beam(Graphics2D g, Random random, int x, int y, int w, int h) {
-        px(g, 0x1f1008, x * S, y * S, w * S, h * S);
-        px(g, 0x6a3c1c, x * S, y * S + S, w * S, h * S - 2 * S);
-        for (int i = 0; i < w / 2; i++) {
-            int sx = x * S + random.nextInt(w * S - 40), sy = y * S + S + random.nextInt(h * S - 3 * S);
-            px(g, random.nextBoolean() ? 0x4c2a13 : 0x8a5328, sx, sy, 10 + random.nextInt(30), 2);
-        }
-        px(g, 0x9a6234, x * S, y * S + S, w * S, 2);
-    }
 
     // ---------------------------------------------------------------- buttons
     static void buttons() throws Exception {
@@ -302,37 +244,25 @@ class BuildEscMenu {
 
     static final int BUTTON_BORDER = 3;
 
-    /** Dark wood plank, orange rim, cream corner rivets; 1x pixel art like vanilla. */
-    static BufferedImage button(boolean highlighted, boolean disabled) {
-        int w = 200, h = 20;
-        BufferedImage image = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g = image.createGraphics();
-        Random random = new Random(7);
-        int rim = disabled ? 0x6e5a49 : highlighted ? 0xffbf3f : 0xe8761c;
-        int rimLight = disabled ? 0x8a7562 : highlighted ? 0xffe28a : 0xffa645;
-        int rimDark = disabled ? 0x4d3f33 : highlighted ? 0xd98a1c : 0xb4500f;
-        int wood = disabled ? 0x3a2f27 : highlighted ? 0x5e341a : 0x4a2814;
-        // Two-pixel orange rim inside a dark outline, as on the reference buttons.
-        px(g, 0x140a04, 0, 0, w, h);
-        px(g, rim, 1, 1, w - 2, h - 2);
-        px(g, rimLight, 1, 1, w - 2, 1);
-        px(g, rimDark, 1, h - 2, w - 2, 1);
-        px(g, wood, 3, 3, w - 6, h - 6);
-        for (int i = 0; i < 60; i++) {
-            int sx = 3 + random.nextInt(w - 16), sy = 4 + random.nextInt(h - 8);
-            px(g, shade(wood, random.nextBoolean() ? -14 : 12), sx, sy, 4 + random.nextInt(12), 1);
-        }
-        px(g, shade(wood, -22), 3, 3, w - 6, 1);
-        int rivet = disabled ? 0xb0a090 : 0xffe6b0;
-        // Corner rivets stay inside the 3 px nine-slice border, so every button width keeps them.
-        for (int corner = 0; corner < 4; corner++) px(g, rivet, corner % 2 == 0 ? 2 : w - 3, corner / 2 == 0 ? 2 : h - 3, 1, 1);
-        g.dispose();
-        return image;
-    }
+    // Normal, hover and disabled buttons in the UI kit sheet (art/ui-kit.png).
+    static final int[] KIT_NORMAL = {48, 300, 394, 86}, KIT_HOVER = {463, 299, 395, 88}, KIT_DISABLED = {1294, 300, 196, 86};
+    static BufferedImage kit;
 
-    static int shade(int rgb, int delta) {
-        int r = Math.max(0, Math.min(255, ((rgb >> 16) & 255) + delta)), g = Math.max(0, Math.min(255, ((rgb >> 8) & 255) + delta)), b = Math.max(0, Math.min(255, (rgb & 255) + delta));
-        return (r << 16) | (g << 8) | b;
+    /**
+     * The kit button scaled to the vanilla 20 px height (1x pixel art). Its rivet
+     * ends are kept and the plain wood middle is repeated to the 200 px sprite width.
+     */
+    static BufferedImage button(boolean highlighted, boolean disabled) {
+        int[] r = disabled ? KIT_DISABLED : highlighted ? KIT_HOVER : KIT_NORMAL;
+        BufferedImage crop = kit.getSubimage(r[0], r[1], r[2], r[3]);
+        BufferedImage scaled = areaScale(crop, (int)Math.round(r[2] * 20.0 / r[3]), 20);
+        int w = 200, end = Math.min(24, scaled.getWidth() / 2 - 4), middle = scaled.getWidth() - 2 * end;
+        BufferedImage image = new BufferedImage(w, 20, BufferedImage.TYPE_INT_ARGB);
+        for (int y = 0; y < 20; y++) {
+            for (int x = 0; x < end; x++) { image.setRGB(x, y, scaled.getRGB(x, y)); image.setRGB(w - end + x, y, scaled.getRGB(scaled.getWidth() - end + x, y)); }
+            for (int x = end; x < w - end; x++) image.setRGB(x, y, scaled.getRGB(end + (x - end) % middle, y));
+        }
+        return image;
     }
 
     // ---------------------------------------------------------------- text
@@ -446,7 +376,7 @@ class BuildEscMenu {
             drawText(g, labels[i], ox + tx * scale, oy + ty * scale, scale, 0xffffff);
         }
         // The frame is the first button's label: shadow first, then the glyphs.
-        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
         g.drawImage(tint(frame, 0x3f3f3f), ox + (cx - CX + 1) * scale, oy + (frameTop + 1) * scale, W * scale, H * scale, null);
         g.drawImage(frame, ox + (cx - CX) * scale, oy + frameTop * scale, W * scale, H * scale, null);
         BufferedImage text = text(LABEL);

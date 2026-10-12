@@ -25,6 +25,9 @@ public final class TilkiInterface extends JavaPlugin implements Listener, Comman
     private String url;
     private byte[] hash;
     private boolean authRequired;
+    private final HudLayout layout = HudLayout.load();
+    private final TabFrame tabFrame = layout == null ? null : new TabFrame(layout);
+    private static final String[] ICONS = {"online","ping","player","rank","money","island","time","fox"};
     private static final class Panel {
         final Scoreboard previous, board;
         final Objective objective;
@@ -159,10 +162,15 @@ public final class TilkiInterface extends JavaPlugin implements Listener, Comman
             }
             getConfig().set("sidebar.lines",lines); getConfig().set("layout.compact-v2",true); saveConfig();
         }
+        if (!getConfig().getBoolean("layout.forest-hud-v9",false)) {
+            // The footer line gets the fox icon; the old mascot title is replaced by the frame.
+            getConfig().set("sidebar.lines",getConfig().getStringList("sidebar.lines").stream().map(line->line.equals("{footer}")?"{icon-fox} {footer}":line).toList());
+            getConfig().set("layout.forest-hud-v9",true);saveConfig();
+        }
         String previousUrl=getConfig().getString("pack.url","");
-        if (previousUrl.startsWith("https://github.com/ardaacala/TilkiInterface/releases/download/") && !previousUrl.contains("/v1.4.9/")) {
-            getConfig().set("pack.url","https://github.com/ardaacala/TilkiInterface/releases/download/v1.4.9/TilkiInterface-ResourcePack.zip");
-            getConfig().set("pack.sha1","8dba3721f97491ccf269ec1e072ee2e53ecfc0d3"); saveConfig();
+        if (previousUrl.startsWith("https://github.com/ardaacala/TilkiInterface/releases/download/") && !previousUrl.contains("/v1.5.0/")) {
+            getConfig().set("pack.url","https://github.com/ardaacala/TilkiInterface/releases/download/v1.5.0/TilkiInterface-ResourcePack.zip");
+            getConfig().set("pack.sha1","09c73d71ec7fbb04d649a89132d567c35eb08df5"); saveConfig();
         }
         url=getConfig().getString("pack.url","").trim(); hash=null;
         if (url.isEmpty()) return;
@@ -227,8 +235,7 @@ public final class TilkiInterface extends JavaPlugin implements Listener, Comman
         data.put("island",expand(player,getConfig().getString("sidebar.island-placeholder"),"—"));
         data.put("date",DATE.format(Instant.now())); data.put("footer",getConfig().getString("sidebar.footer","TilkiCraft"));
         data.put("island-level",expand(player,getConfig().getString("island-level.placeholder","%superior_island_level_format%"),"0"));
-        String[] icons={"online","ping","player","rank","money","island","time"};
-        for(int i=0;i<icons.length;i++) data.put("icon-"+icons[i],ready.contains(player.getUniqueId())?"§f"+(char)(0xea20+i):"&6◆");
+        for(String icon:ICONS) data.put("icon-"+icon,ready.contains(player.getUniqueId()) && layout!=null?"§f"+layout.icon(icon):"&6◆");
         return data;
     }
     private String render(Player player,String text,Map<String,String> values) {
@@ -244,21 +251,35 @@ public final class TilkiInterface extends JavaPlugin implements Listener, Comman
             if (panel==null) {
                 boolean sidebar=getConfig().getBoolean("sidebar.enabled",true);
                 if (getConfig().getBoolean("sidebar.respect-existing",true) && player.getScoreboard().getObjective(DisplaySlot.SIDEBAR)!=null) sidebar=false;
+
                 panel=new Panel(player,sidebar,Math.min(13,getConfig().getStringList("sidebar.lines").size())); panels.put(id,panel);
             }
             Map<String,String> values=values(player);
             if (getConfig().getBoolean("tab.enabled",true)) {
-                values.put("tab-logo",ready.contains(id)?"§f"+(char)0xea02:"");
-                String header=String.join("\n",getConfig().getStringList("tab.header"));
-                String footer=String.join("\n",getConfig().getStringList("tab.footer"));
-                if (header.isEmpty()) header=FrameGeometry.HEADER;
-                if (footer.isEmpty()) footer=FrameGeometry.FOOTER;
-                panel.lastHeader=render(player,header,values); panel.lastFooter=render(player,footer,values);
+                values.put("tab-logo","");
+                Object tags=tilkiTags();
+                int nameWidth=UiText.fixedTabNameWidth(tags);
+                if (ready.contains(id) && tabFrame!=null && nameWidth>0 && "frame".equalsIgnoreCase(getConfig().getString("tab.style","frame"))) {
+                    // The frame matches TilkiTags' fixed-width names; heads add 9 px in online mode.
+                    int entries=(int)Math.min(80,Bukkit.getOnlinePlayers().stream().filter(player::canSee).count());
+                    String heads=getConfig().getString("tab.show-heads","auto");
+                    int slot=TabFrame.slotWidth(nameWidth,heads.equalsIgnoreCase("auto")?Bukkit.getOnlineMode():Boolean.parseBoolean(heads));
+                    panel.lastHeader=tabFrame.header(entries,slot,render(player,getConfig().getString("tab.title","&6&lSKYBLOCK"),values),render(player,getConfig().getString("tab.online","&fÇevrimiçi: &a{online} &8/ &f{max}"),values));
+                    panel.lastFooter=tabFrame.footer(entries,slot,render(player,getConfig().getString("tab.welcome","&fHoş geldin!"),values),render(player,getConfig().getString("tab.links","&6/discord &8• &6/kurallar"),values));
+                } else {
+                    String header=String.join("\n",getConfig().getStringList("tab.header"));
+                    String footer=String.join("\n",getConfig().getStringList("tab.footer"));
+                    if (header.isEmpty()) header=FrameGeometry.HEADER;
+                    if (footer.isEmpty()) footer=FrameGeometry.FOOTER;
+                    panel.lastHeader=render(player,header,values); panel.lastFooter=render(player,footer,values);
+                }
                 player.setPlayerListHeaderFooter(panel.lastHeader,panel.lastFooter);
             }
             if (panel.objective!=null) {
                 List<String> lines=getConfig().getStringList("sidebar.lines");
-                panel.objective.setDisplayName(ready.contains(id)?"§f\uEA01":render(player,getConfig().getString("sidebar.title","TilkiCraft"),values));
+                boolean framed=ready.contains(id) && layout!=null;
+                // Zero-width title glyph: the small logo is centred above the see-through panel.
+                panel.objective.setDisplayName(framed?"§f"+layout.text("sidebar.title"):render(player,getConfig().getString("sidebar.title","TilkiCraft"),values));
                 for (int i=0;i<panel.rows.size();i++) {
                     String line=i<lines.size()?render(player,lines.get(i),values):"";
                     panel.rows.get(i).setPrefix(line);
@@ -267,6 +288,10 @@ public final class TilkiInterface extends JavaPlugin implements Listener, Comman
             panel.bar.setVisible(getConfig().getBoolean("top-bar.enabled",true));
             panel.bar.setTitle(render(player,getConfig().getString("top-bar.text","TilkiCraft"),values));
         }
+    }
+    private Object tilkiTags() {
+        var tags=Bukkit.getPluginManager().getPlugin("TilkiTags");
+        return tags!=null && tags.isEnabled()?tags:null;
     }
     private void remove(Player player) { Panel panel=panels.remove(player.getUniqueId()); if (panel!=null) panel.close(player); }
     @Override public boolean onCommand(CommandSender sender,Command command,String label,String[] args) {

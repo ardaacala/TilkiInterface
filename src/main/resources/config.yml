@@ -14,23 +14,33 @@ sidebar:
   lines:
     - '&7{date}'
     - ' '
-    - '&6● &fÇevrimiçi &7» &e{online}/{max}'
-    - '&6● &fPing &7» &e{ping} ms'
+    - '{icon-online} &fÇevrimiçi &7» &e{online}/{max}'
+    - '{icon-ping} &fPing &7» &e{ping} ms'
     - ' '
-    - '&6◆ &fOyuncu &7» &f{player}'
-    - '&6◆ &fRütbe &7» {rank}'
-    - '&6◆ &fBakiye &7» &e{money}'
-    - '&6◆ &fAda Seviyesi &7» &e{island-level}'
+    - '{icon-player} &fOyuncu &7» &f{player}'
+    - '{icon-rank} &fRütbe &7» {rank}'
+    - '{icon-money} &fBakiye &7» &e{money}'
+    - '{icon-island} &fAda Seviyesi &7» &e{island-level}'
     - ' '
-    - '&6✦ &fSüre &7» &e{playtime}'
+    - '{icon-time} &fSüre &7» &e{playtime}'
     - ' '
-    - '{footer}'
+    - '{icon-fox} {footer}'
+tab:
+  enabled: true
+  # frame: oyuncu sayısına göre büyüyen orman çerçevesi (TilkiTags gerekir); text: düz başlık/alt bilgi.
+  style: frame
+  # auto: sunucu online-mode ise oyuncu kafaları için 9 px eklenir. true/false ile zorlanabilir.
+  show-heads: auto
+  title: '&6&lSKYBLOCK'
+  online: '&fÇevrimiçi: &a{online} &8/ &f{max}'
+  welcome: '&fHoş geldin!'
+  links: '&6/discord &8• &6/kurallar'
 top-bar:
   enabled: true
   text: '&6◆ &f{money} &8┃ {rank} &8┃ &6TilkiCraft &8┃ &f{online}/{max}'
 pack:
-  url: 'https://github.com/ardaacala/TilkiInterface/releases/download/v1.4.9/TilkiInterface-ResourcePack.zip'
-  sha1: '8dba3721f97491ccf269ec1e072ee2e53ecfc0d3'
+  url: 'https://github.com/ardaacala/TilkiInterface/releases/download/v1.5.0/TilkiInterface-ResourcePack.zip'
+  sha1: '09c73d71ec7fbb04d649a89132d567c35eb08df5'
   required: false
   delay-ticks: 100
   prompt: 'TilkiCraft logo ve menü temasını yükle.'

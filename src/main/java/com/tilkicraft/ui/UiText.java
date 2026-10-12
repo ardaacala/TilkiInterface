@@ -17,6 +17,12 @@ public final class UiText {
         }
         return width;
     }
+    /** TilkiTags' fixed TAB name width, or 0 when TilkiTags (with the TAB padding) is missing. */
+    public static int fixedTabNameWidth(Object tags) {
+        if (tags == null) return 0;
+        try { return (int)tags.getClass().getMethod("getTabNameWidth").invoke(tags); }
+        catch (ReflectiveOperationException | ClassCastException ex) { return 0; }
+    }
     public static String pixelSpace(int pixels) { return String.valueOf((char)(0xee40+Math.max(0,Math.min(192,pixels)))); }
     public static String fit(String text,int pixels) {
         if(tabNameWidth(text)<=pixels)return text;

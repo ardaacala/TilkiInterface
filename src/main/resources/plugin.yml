@@ -1,5 +1,5 @@
 name: TilkiInterface
-version: 1.4.9
+version: 1.5.0
 main: com.tilkicraft.ui.TilkiInterface
 api-version: '1.21'
 softdepend: [TilkiResourcePack, AuthMe, Vault, Essentials, PlaceholderAPI, LuckPerms, SuperiorSkyblock2, CombatGuns, TilkiLoginScreen]

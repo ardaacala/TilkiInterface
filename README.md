@@ -4,12 +4,12 @@ TilkiCraft logosu ve turuncu/koyu kahve temasıyla Spigot **1.21.4**, Java **21*
 
 ## Kurulum
 
-1. Sunucuyu durdur, eski `TilkiStatsHUD-*.jar` ve `TilkiInterface-*.jar` dosyalarını kaldır, `TilkiInterface-1.4.9.jar` dosyasını `plugins` klasörüne koy ve yeniden başlat. Eski `plugins/TilkiStatsHUD/config.yml` dosyası ilk açılışta `plugins/TilkiInterface/config.yml` yoluna kopyalanır. Resmî kaynak paketi bağlantısı otomatik güncellenir.
+1. Sunucuyu durdur, eski `TilkiStatsHUD-*.jar` ve `TilkiInterface-*.jar` dosyalarını kaldır, `TilkiInterface-1.5.0.jar` dosyasını `plugins` klasörüne koy ve yeniden başlat. Eski `plugins/TilkiStatsHUD/config.yml` dosyası ilk açılışta `plugins/TilkiInterface/config.yml` yoluna kopyalanır. Resmî kaynak paketi bağlantısı otomatik güncellenir.
 2. Oyuncu kaynak paketini kabul eder. ZIP GitHub'dan otomatik indirilir; sunucu klasörüne ZIP koymak gerekmez.
 3. AuthMe varsa panel yalnızca başarılı girişten sonra açılır. AuthMe yoksa normal açılır.
 4. `/tilkiui` veya `/istatistik`: paneli/üst şeridi aç-kapat. `/tilkiui reload`: yönetici ayar yenileme.
 
-Paket: https://github.com/ardaacala/TilkiInterface/releases/tag/v1.4.9
+Paket: https://github.com/ardaacala/TilkiInterface/releases/tag/v1.5.0
 
 ## Gösterilen bilgiler
 
@@ -79,6 +79,15 @@ Paket yeniden üretiminde önce `BuildInterfacePack`, sonra `BuildLogoAssets`, s
 ESC çerçevesinin alt kirişi bütün duraklatma menüsünü, “Bağlantıyı Kes” düğmesi dahil, çevreleyecek biçimde uzatıldı. 256 piksel atlas sınırı için alt bölüm ayrı glif olarak çizilir; iki parça Minecraft GUI ölçeğiyle birlikte büyüyüp küçülür. Seçenek ekranlarında düğmelerin yanında kaydırıcılar, onay kutuları ve metin alanları da ahşap/turuncu temayı kullanır.
 
 TAB oyuncu listesi 1–80 görünür oyuncu için 1–4 sütun ve satır sayısına göre 42 farklı geometriden uygun olanı seçer. TilkiCraft logosu üst kirişe bağlıdır; orta alan şeffaftır. Paket üretim zincirinin son adımları `BuildOptionsTheme`, `BuildEscFrame` ve `BuildTabFrame` araçlarıdır. [ESC önizlemesi](art/esc-frame-preview.png) ile [TAB önizlemesi](art/tab-frame-preview.png) tasarım kontrolüdür.
+
+## 1.5.0 — Orman temalı ESC, TAB ve istatistik paneli
+
+- **ESC:** Çerçeve [orman tasarımından](art/esc-menu-reference-v2.png) birebir alınır (yapraklı direkler, fenerler, tilkiler, `Destek: /discord`). 1x piksel-art'tır ve tek glif olarak 1.21.4 ile 26.2+ düzenlerinde düğmelere bağlıdır. Düğmeler [UI kitinin](art/ui-kit.png) perçinli ahşap düğmeleridir. [Önizleme](art/esc-frame-preview.png)
+- **İstatistik paneli:** Vanilla yarı saydam zemin korunur. Satır başlarında [simge setinden](art/stat-icons.png) 9 px simgeler bulunur: çevrimiçi, ping, oyuncu, rütbe, bakiye, ada, süre, tilki. Panelin üstünde genişliği sıfır olan küçük bir TilkiCraft logosu ortalanır. Eski büyük tilki başı kaldırıldı. [Önizleme](art/sidebar-preview.png)
+- **TAB:** Yaprak örtüsü, tilkili logo, `SKYBLOCK` / çevrimiçi tabelası, fenerli direkler, oyuncu satırlarının ahşap panosu ve `Hoş geldin! / /discord • /kurallar` tabelası. Pano GUI ölçeğinden bağımsız olarak vanilla düzene hizalanır. Oyuncu sayısıyla satır satır uzar ve 20'den sonra sütun ekler. Hizalama, TilkiTags 1.3.6'nın sabit genişliğe tamamladığı TAB adlarına dayanır. Ping simgeleri yeşil sinyal çubuklarıdır. [Önizleme](art/tab-preview.png)
+- Ayarlar: `tab.style` (`frame`/`text`), `tab.show-heads` (`auto`/`true`/`false`), `tab.title`, `tab.online`, `tab.welcome`, `tab.links`.
+- Sınırlar: Minecraft, 3–4 sütunda (41+ oyuncu) küçük GUI genişliklerinde sütunları daraltır; bu durumda çerçeve kayabilir. Proxy arkasında `tab.show-heads` elle ayarlanmalıdır.
+- Üretim: `javac -cp gson -d target/tools tools/BuildShared.java tools/BuildHudTab.java`, ardından `java -cp gson;target/tools BuildHudTab art/ui-kit.png art/stat-icons.png art/esc-menu-reference-v2.png <ascii.png>`. Son olarak `BuildEscMenu art/esc-menu-reference-v2.png art/ui-kit.png <ascii.png>` çalıştırılır; bu adım ZIP'i ve SHA-1'i de üretir. Yerleşim, eklentinin okuduğu `src/main/resources/hud-layout.properties` dosyasına yazılır.
 
 ## 1.4.9 — 26.x uyumlu ESC düğmeleri
 
