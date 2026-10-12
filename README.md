@@ -4,12 +4,12 @@ TilkiCraft logosu ve turuncu/koyu kahve temasıyla Spigot **1.21.4**, Java **21*
 
 ## Kurulum
 
-1. Sunucuyu durdur, eski `TilkiStatsHUD-*.jar` ve `TilkiInterface-*.jar` dosyalarını kaldır, `TilkiInterface-1.4.8.jar` dosyasını `plugins` klasörüne koy ve yeniden başlat. Eski `plugins/TilkiStatsHUD/config.yml` dosyası ilk açılışta `plugins/TilkiInterface/config.yml` yoluna kopyalanır. Resmî kaynak paketi bağlantısı otomatik güncellenir.
+1. Sunucuyu durdur, eski `TilkiStatsHUD-*.jar` ve `TilkiInterface-*.jar` dosyalarını kaldır, `TilkiInterface-1.4.9.jar` dosyasını `plugins` klasörüne koy ve yeniden başlat. Eski `plugins/TilkiStatsHUD/config.yml` dosyası ilk açılışta `plugins/TilkiInterface/config.yml` yoluna kopyalanır. Resmî kaynak paketi bağlantısı otomatik güncellenir.
 2. Oyuncu kaynak paketini kabul eder. ZIP GitHub'dan otomatik indirilir; sunucu klasörüne ZIP koymak gerekmez.
 3. AuthMe varsa panel yalnızca başarılı girişten sonra açılır. AuthMe yoksa normal açılır.
 4. `/tilkiui` veya `/istatistik`: paneli/üst şeridi aç-kapat. `/tilkiui reload`: yönetici ayar yenileme.
 
-Paket: https://github.com/ardaacala/TilkiInterface/releases/tag/v1.4.8
+Paket: https://github.com/ardaacala/TilkiInterface/releases/tag/v1.4.9
 
 ## Gösterilen bilgiler
 
@@ -79,6 +79,12 @@ Paket yeniden üretiminde önce `BuildInterfacePack`, sonra `BuildLogoAssets`, s
 ESC çerçevesinin alt kirişi bütün duraklatma menüsünü, “Bağlantıyı Kes” düğmesi dahil, çevreleyecek biçimde uzatıldı. 256 piksel atlas sınırı için alt bölüm ayrı glif olarak çizilir; iki parça Minecraft GUI ölçeğiyle birlikte büyüyüp küçülür. Seçenek ekranlarında düğmelerin yanında kaydırıcılar, onay kutuları ve metin alanları da ahşap/turuncu temayı kullanır.
 
 TAB oyuncu listesi 1–80 görünür oyuncu için 1–4 sütun ve satır sayısına göre 42 farklı geometriden uygun olanı seçer. TilkiCraft logosu üst kirişe bağlıdır; orta alan şeffaftır. Paket üretim zincirinin son adımları `BuildOptionsTheme`, `BuildEscFrame` ve `BuildTabFrame` araçlarıdır. [ESC önizlemesi](art/esc-frame-preview.png) ile [TAB önizlemesi](art/tab-frame-preview.png) tasarım kontrolüdür.
+
+## 1.4.9 — 26.x uyumlu ESC düğmeleri
+
+Düğme dokuları vanilla ile aynı 200×20 boyuta ve 3 piksel kenara döndü; 3x HD düğmeler bir 26.3 istemcisinde eksik doku (mor-siyah) olarak görünmüştü. Tasarım aynıdır: kalın turuncu çerçeve, krem köşe perçinleri, damarlı ahşap.
+
+26.2 ve sonrasında duraklatma menüsünün geri bildirim satırı dört simge düğmesine dönüştü. Paket `tilki_icon_menu` overlay'ini taşır: 26.2+ istemciler (paket formatı 88+) bu satırda simgelerin arasını ahşapla dolu görür, 1.21.4 eski düzeni görür. `pack.mcmeta` hem eski (`pack_format`, `supported_formats`, `formats`) hem yeni (`min_format`, `max_format`) alanları içerir; boş `tilki_legacy` girdisi iki ayrıştırıcının da dosyayı kabul etmesini sağlar. [Önizleme](art/esc-frame-preview.png) iki düzeni üç GUI yüksekliğinde gösterir. Önizleme simgeleri için üçüncü argüman olarak açılmış istemci `gui/sprites` klasörü verilebilir.
 
 ## 1.4.8 — Düğmelere bağlı ESC panosu
 

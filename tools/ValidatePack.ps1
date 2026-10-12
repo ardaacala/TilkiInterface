@@ -55,14 +55,21 @@ foreach($character in $escLabel.ToCharArray()) {
         $measured=0
         for($x=$bitmap.Width-1;$x -ge 0 -and $measured -eq 0;$x--) { for($y=0;$y -lt $bitmap.Height;$y++) { if($bitmap.GetPixel($x,$y).A -ne 0) { $measured=$x+1;break } } }
         if($provider.file -match 'r(\d)c(\d)\.png$') {
-            $row=[int]$Matches[1];$col=[int]$Matches[2];$scale=$bitmap.Height/$provider.height
             # Label baseline is button top + 6; glyph top = baseline + 7 - ascent.
             $top=13-$provider.ascent;$left=$net
-            foreach($button in @(@(-102,0,204),@(-102,24,98),@(4,24,98),@(-102,48,98),@(4,48,98),@(-102,72,98),@(4,72,98),@(-102,96,204))) {
-                for($by=$button[1];$by -lt $button[1]+20;$by++) { for($bx=$button[0];$bx -lt $button[0]+$button[2];$bx++) {
-                    $tx=($bx-$left)*$scale+1;$ty=($by-$top)*$scale+1
-                    if($tx -ge 0 -and $ty -ge 0 -and $tx -lt $bitmap.Width -and $ty -lt $bitmap.Height -and $bitmap.GetPixel($tx,$ty).A -ge 26) { throw "ESC frame covers a pause button at $bx,$by" }
-                } }
+            $legacyGrid=@(@(-102,0,204),@(-102,24,98),@(4,24,98),@(-102,48,98),@(4,48,98),@(-102,72,98),@(4,72,98),@(-102,96,204))
+            # 26.2+ (overlay): the feedback row becomes four centred 20 px icon buttons.
+            $iconGrid=@(@(-102,0,204),@(-102,24,98),@(4,24,98),@(-46,48,20),@(-22,48,20),@(2,48,20),@(26,48,20),@(-102,72,98),@(4,72,98),@(-102,96,204))
+            $overlayPath=Join-Path $root ('tilki_icon_menu/assets/tilkiinterface/textures/' + $provider.file.Substring('tilkiinterface:'.Length))
+            foreach($variant in @(@($bitmap,$legacyGrid),@($(if(Test-Path $overlayPath){[Drawing.Bitmap]::new($overlayPath)}else{$bitmap}),$iconGrid))) {
+                $image=$variant[0];$scale=$image.Height/$provider.height
+                if($image.Width -ne $bitmap.Width -or $image.Height -ne $bitmap.Height) { throw 'Overlay ESC tile changes glyph size' }
+                foreach($button in $variant[1]) {
+                    for($by=$button[1];$by -lt $button[1]+20;$by++) { for($bx=$button[0];$bx -lt $button[0]+$button[2];$bx++) {
+                        $tx=($bx-$left)*$scale+1;$ty=($by-$top)*$scale+1
+                        if($tx -ge 0 -and $ty -ge 0 -and $tx -lt $image.Width -and $ty -lt $image.Height -and $image.GetPixel($tx,$ty).A -ge 26) { throw "ESC frame covers a pause button at $bx,$by" }
+                    } }
+                }
             }
         }
         $net+=[int][Math]::Floor(0.5+$measured*$provider.height/$bitmap.Height)+1
@@ -72,9 +79,9 @@ if($net -ne 0) { throw "ESC label must have zero width, got $net" }
 foreach ($state in @('button','button_highlighted','button_disabled')) {
     $imagePath = Join-Path $root ('assets/minecraft/textures/gui/sprites/widget/'+$state+'.png')
     $bitmap = [Drawing.Bitmap]::new($imagePath)
-    try { if ($bitmap.Width -ne 600 -or $bitmap.Height -ne 60) { throw 'Invalid HD GUI button dimensions' } } finally { $bitmap.Dispose() }
+    try { if ($bitmap.Width -ne 200 -or $bitmap.Height -ne 20) { throw 'GUI button must match the vanilla 200x20 sprite' } } finally { $bitmap.Dispose() }
     $metadata = [IO.File]::ReadAllText($imagePath+'.mcmeta') | ConvertFrom-Json
-    if ($metadata.gui.scaling.type -ne 'nine_slice' -or $metadata.gui.scaling.width -ne 200 -or $metadata.gui.scaling.height -ne 20 -or $metadata.gui.scaling.border -ne 4) { throw 'GUI button scaling invalid' }
+    if ($metadata.gui.scaling.type -ne 'nine_slice' -or $metadata.gui.scaling.width -ne 200 -or $metadata.gui.scaling.height -ne 20 -or $metadata.gui.scaling.border -ne 3) { throw 'GUI button scaling invalid' }
 }
 foreach($state in @('slider','slider_highlighted','text_field','text_field_highlighted')) {
     $imagePath=Join-Path $root ('assets/minecraft/textures/gui/sprites/widget/'+$state+'.png')
@@ -87,7 +94,7 @@ foreach($state in @('checkbox','checkbox_highlighted','checkbox_selected','check
 $zipPath = Join-Path $projectRoot 'dist/TilkiInterface-ResourcePack.zip'
 $zip = [IO.Compression.ZipFile]::OpenRead($zipPath)
 try {
-    if (!$zip.GetEntry('pack.mcmeta') -or !$zip.GetEntry('assets/minecraft/lang/tr_tr.json') -or !$zip.GetEntry('assets/tilkiinterface/textures/font/esc_menu/r0c0.png') -or $zip.GetEntry('assets/tilkiinterface/textures/font/esc_frame.png')) { throw 'ZIP layout invalid' }
+    if (!$zip.GetEntry('pack.mcmeta') -or !$zip.GetEntry('assets/minecraft/lang/tr_tr.json') -or !$zip.GetEntry('assets/tilkiinterface/textures/font/esc_menu/r0c0.png') -or !$zip.GetEntry('tilki_icon_menu/assets/tilkiinterface/textures/font/esc_menu/r1c1.png') -or $zip.GetEntry('assets/tilkiinterface/textures/font/esc_frame.png')) { throw 'ZIP layout invalid' }
     if($zip.GetEntry('assets/tilkiinterface/textures/font/esc_frame_bottom.png') -or $zip.Entries.FullName | Where-Object { $_ -like 'assets/tilkiinterface/textures/font/tab_frame/*' }) { throw 'Removed frame assets remain in ZIP' }
     if($zip.Entries.FullName | Where-Object { $_ -like 'assets/tilkiinterface/textures/font/hd/*' -or $_ -like 'assets/tilkiinterface/textures/font/sidebar_frame*' -or $_ -match 'assets/tilkiinterface/textures/font/tab_[0-9]' }) { throw 'Legacy frame texture remains' }
 } finally { $zip.Dispose() }
@@ -95,4 +102,4 @@ $hash = (Get-FileHash $zipPath -Algorithm SHA1).Hash.ToLowerInvariant()
 if ($hash -ne ([IO.File]::ReadAllText((Join-Path $projectRoot 'dist/resourcepack-sha1.txt'))).Trim()) { throw 'Pack SHA1 mismatch' }
 $config = [IO.File]::ReadAllText((Join-Path $projectRoot 'src/main/resources/config.yml'))
 if (!$config.Contains($hash)) { throw 'Default config SHA1 mismatch' }
-Write-Output 'VALID: HUD/TAB logos, button-anchored zero-width ESC frame with clear button holes, HD buttons, themed options controls, fonts, ZIP and SHA1.'
+Write-Output 'VALID: HUD/TAB logos, button-anchored zero-width ESC frame with clear button holes for 1.21.4 and 26.2+, vanilla-size buttons, themed options controls, fonts, ZIP and SHA1.'

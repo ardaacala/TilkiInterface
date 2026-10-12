@@ -30,19 +30,31 @@ class BuildEscMenu {
         {30, TOP + 48, 98, 20}, {136, TOP + 48, 98, 20},
         {30, TOP + 72, 98, 20}, {136, TOP + 72, 98, 20},
         {30, TOP + 96, 204, 20}};
+    // 26.2+ replaces the feedback row with four centred 20 px icon buttons
+    // (bug, feedback, friends, player reporting) spaced 4 px apart.
+    static final int[][] ICON_BUTTONS = {
+        BUTTONS[0], BUTTONS[1], BUTTONS[2],
+        {CX - 46, TOP + 48, 20, 20}, {CX - 22, TOP + 48, 20, 20}, {CX + 2, TOP + 48, 20, 20}, {CX + 26, TOP + 48, 20, 20},
+        BUTTONS[5], BUTTONS[6], BUTTONS[7]};
+    // Resource pack format of 26.2, the first release with the icon row.
+    static final int ICON_MENU_FORMAT = 88, MAX_FORMAT = 999;
+    static final String OVERLAY = "tilki_icon_menu", LEGACY_OVERLAY = "tilki_legacy";
     static final char TILE_BASE = '', TEXT = '', BACK_ONE = '', HALF = '', FULL = '', TEXT_LEFT = '', TEXT_RIGHT = '';
     static final String LABEL = "Oyuna Dön";
     static BufferedImage atlas;
 
     public static void main(String[] args) throws Exception {
-        if (args.length != 2) throw new IllegalArgumentException("Usage: BuildEscMenu <esc-menu-frame-source.png> <ascii.png>");
+        if (args.length < 2) throw new IllegalArgumentException("Usage: BuildEscMenu <esc-menu-frame-source.png> <ascii.png> [extracted gui/sprites dir for preview icons]");
         BufferedImage source = ImageIO.read(Path.of(args[0]).toFile());
         atlas = ImageIO.read(Path.of(args[1]).toFile());
         if (source == null || atlas == null || atlas.getWidth() != 256) throw new IllegalArgumentException("Invalid frame or ASCII atlas");
-        BufferedImage frame = frame(source);
+        BufferedImage frame = frame(source, BUTTONS), iconFrame = frame(source, ICON_BUTTONS);
         Path textures = ROOT.resolve("assets/tilkiinterface/textures/font/esc_menu");
-        Files.createDirectories(textures);
-        try (var old = Files.list(textures)) { for (Path file : old.toList()) Files.delete(file); }
+        Path overlayTextures = ROOT.resolve(OVERLAY + "/assets/tilkiinterface/textures/font/esc_menu");
+        for (Path dir : List.of(textures, overlayTextures)) {
+            Files.createDirectories(dir);
+            try (var old = Files.list(dir)) { for (Path file : old.toList()) Files.delete(file); }
+        }
         Files.deleteIfExists(ROOT.resolve("assets/tilkiinterface/textures/font/esc_frame.png"));
         Files.deleteIfExists(ROOT.resolve("assets/tilkiinterface/textures/font/esc_frame_bottom.png"));
 
@@ -54,13 +66,11 @@ class BuildEscMenu {
             int ascent = 6 + 7 - (y - TOP);
             if (ascent > ROWS[row]) throw new IllegalStateException("Row "+row+" ascent exceeds its height");
             for (int col = 0; col < COLS; col++) {
-                BufferedImage tile = frame.getSubimage(col * TILE * S, y * S, TILE * S, ROWS[row] * S);
-                BufferedImage copy = new BufferedImage(tile.getWidth(), tile.getHeight(), BufferedImage.TYPE_INT_ARGB);
-                copy.getGraphics().drawImage(tile, 0, 0, null);
-                // Minecraft measures advance from the last non-transparent column.
-                if ((copy.getRGB(copy.getWidth() - 1, 0) >>> 24) == 0) copy.setRGB(copy.getWidth() - 1, 0, 0x01ffffff);
+                BufferedImage tile = tile(frame, row, col, y), iconTile = tile(iconFrame, row, col, y);
                 String name = "r"+row+"c"+col+".png";
-                ImageIO.write(copy, "png", textures.resolve(name).toFile());
+                ImageIO.write(tile, "png", textures.resolve(name).toFile());
+                // The overlay only carries the tiles that differ for the icon row.
+                if (!same(tile, iconTile)) ImageIO.write(iconTile, "png", overlayTextures.resolve(name).toFile());
                 char glyph = (char)(TILE_BASE + row * COLS + col);
                 added.add(bitmap("tilkiinterface:font/esc_menu/"+name, ROWS[row], ascent, glyph));
                 label.append(glyph).append(BACK_ONE);
@@ -113,9 +123,38 @@ class BuildEscMenu {
             if (lang.equals("tr_tr")) turkish.forEach(translation::addProperty);
             Files.writeString(path, translation.toString());
         }
+        Files.writeString(ROOT.resolve("pack.mcmeta"), packMetadata("TilkiCraft - orange fox interface | 1.21.4 - 26.x"));
         buttons();
         writeZip();
-        preview(frame);
+        preview(frame, iconFrame, args.length > 2 ? Path.of(args[2]) : null);
+    }
+
+    /**
+     * Declares 1.21.4 (46) up to current releases and routes 26.2+ clients to the
+     * icon-row frame. Old and new field names are both present, as required when a
+     * pack spans formats below and above 65.
+     */
+    static String packMetadata(String description) {
+        // 1.21.4 needs "formats" on every overlay, while 26.x rejects it unless some
+        // overlay covers a pre-65 format; the empty legacy entry makes both accept it.
+        return "{\"pack\":{\"description\":\"" + description + "\",\"pack_format\":46,\"supported_formats\":[46," + MAX_FORMAT + "],\"min_format\":46,\"max_format\":" + MAX_FORMAT + "},"
+            + "\"overlays\":{\"entries\":["
+            + "{\"directory\":\"" + LEGACY_OVERLAY + "\",\"formats\":[46,64],\"min_format\":46,\"max_format\":64},"
+            + "{\"directory\":\"" + OVERLAY + "\",\"formats\":[" + ICON_MENU_FORMAT + "," + MAX_FORMAT + "],\"min_format\":" + ICON_MENU_FORMAT + ",\"max_format\":" + MAX_FORMAT + "}]}}\n";
+    }
+
+    static BufferedImage tile(BufferedImage frame, int row, int col, int y) {
+        BufferedImage tile = frame.getSubimage(col * TILE * S, y * S, TILE * S, ROWS[row] * S);
+        BufferedImage copy = new BufferedImage(tile.getWidth(), tile.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        copy.getGraphics().drawImage(tile, 0, 0, null);
+        // Minecraft measures advance from the last non-transparent column.
+        if ((copy.getRGB(copy.getWidth() - 1, 0) >>> 24) == 0) copy.setRGB(copy.getWidth() - 1, 0, 0x01ffffff);
+        return copy;
+    }
+
+    static boolean same(BufferedImage a, BufferedImage b) {
+        for (int y = 0; y < a.getHeight(); y++) for (int x = 0; x < a.getWidth(); x++) if (a.getRGB(x, y) != b.getRGB(x, y)) return false;
+        return true;
     }
 
     static JsonObject bitmap(String file, int height, int ascent, char glyph) {
@@ -129,7 +168,7 @@ class BuildEscMenu {
     }
 
     // ---------------------------------------------------------------- frame art
-    static BufferedImage frame(BufferedImage source) {
+    static BufferedImage frame(BufferedImage source, int[][] holes) {
         BufferedImage canvas = new BufferedImage(W * S, H * S, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g = canvas.createGraphics();
         Random random = new Random(26);
@@ -156,7 +195,7 @@ class BuildEscMenu {
         place(g, source, 40, 985, 1200, 230, 0.215, 1, 186);             // welcome sign
         g.dispose();
         // Native buttons render in these holes; nothing may cover them.
-        for (int[] button : BUTTONS)
+        for (int[] button : holes)
             for (int yy = button[1] * S; yy < (button[1] + button[3]) * S; yy++)
                 for (int xx = button[0] * S; xx < (button[0] + button[2]) * S; xx++) canvas.setRGB(xx, yy, 0);
         return canvas;
@@ -254,14 +293,18 @@ class BuildEscMenu {
         String[] states = {"button", "button_highlighted", "button_disabled"};
         for (int state = 0; state < states.length; state++) {
             ImageIO.write(button(state == 1, state == 2), "png", widgets.resolve(states[state]+".png").toFile());
+            // Same size and border as the vanilla 26.x sprite: the 3x HD variant showed
+            // as a missing texture on a 26.3 client.
             Files.writeString(widgets.resolve(states[state]+".png.mcmeta"),
-                "{\"gui\":{\"scaling\":{\"type\":\"nine_slice\",\"width\":200,\"height\":20,\"border\":4}}}\n");
+                "{\"gui\":{\"scaling\":{\"type\":\"nine_slice\",\"width\":200,\"height\":20,\"border\":" + BUTTON_BORDER + "}}}\n");
         }
     }
 
-    /** Dark wood plank with an orange rim and riveted corner brackets, 3x resolution. */
+    static final int BUTTON_BORDER = 3;
+
+    /** Dark wood plank, orange rim, cream corner rivets; 1x pixel art like vanilla. */
     static BufferedImage button(boolean highlighted, boolean disabled) {
-        int w = 200 * S, h = 20 * S;
+        int w = 200, h = 20;
         BufferedImage image = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g = image.createGraphics();
         Random random = new Random(7);
@@ -269,27 +312,20 @@ class BuildEscMenu {
         int rimLight = disabled ? 0x8a7562 : highlighted ? 0xffe28a : 0xffa645;
         int rimDark = disabled ? 0x4d3f33 : highlighted ? 0xd98a1c : 0xb4500f;
         int wood = disabled ? 0x3a2f27 : highlighted ? 0x5e341a : 0x4a2814;
+        // Two-pixel orange rim inside a dark outline, as on the reference buttons.
         px(g, 0x140a04, 0, 0, w, h);
-        px(g, rim, S, S, w - 2 * S, h - 2 * S);
-        px(g, rimLight, S, S, w - 2 * S, 2);
-        px(g, rimDark, S, h - S - 2, w - 2 * S, 2);
-        px(g, 0x1e0f06, 2 * S, 2 * S, w - 4 * S, h - 4 * S);
-        px(g, wood, 2 * S + 1, 2 * S + 1, w - 4 * S - 2, h - 4 * S - 2);
-        for (int i = 0; i < 70; i++) {
-            int sx = 2 * S + 1 + random.nextInt(w - 4 * S - 40), sy = 2 * S + 2 + random.nextInt(h - 4 * S - 4);
-            px(g, shade(wood, random.nextBoolean() ? -14 : 12), sx, sy, 14 + random.nextInt(36), 1 + random.nextInt(2));
+        px(g, rim, 1, 1, w - 2, h - 2);
+        px(g, rimLight, 1, 1, w - 2, 1);
+        px(g, rimDark, 1, h - 2, w - 2, 1);
+        px(g, wood, 3, 3, w - 6, h - 6);
+        for (int i = 0; i < 60; i++) {
+            int sx = 3 + random.nextInt(w - 16), sy = 4 + random.nextInt(h - 8);
+            px(g, shade(wood, random.nextBoolean() ? -14 : 12), sx, sy, 4 + random.nextInt(12), 1);
         }
-        px(g, shade(wood, 22), 2 * S + 1, 2 * S + 1, w - 4 * S - 2, 1);
-        int ornament = disabled ? 0x8a7562 : highlighted ? 0xffd166 : 0xf08a2a, rivet = disabled ? 0xb0a090 : 0xffe6b0;
-        for (int corner = 0; corner < 4; corner++) {
-            boolean right = corner % 2 == 1, bottom = corner / 2 == 1;
-            int ox = right ? w - 2 * S - 9 : 2 * S, oy = bottom ? h - 2 * S - 9 : 2 * S;
-            for (int[] cell : new int[][]{{0, 0}, {3, 0}, {6, 0}, {0, 3}, {0, 6}}) {
-                int cx = right ? ox + 6 - cell[0] : ox + cell[0], cy = bottom ? oy + 6 - cell[1] : oy + cell[1];
-                px(g, ornament, cx, cy, 3, 3);
-            }
-            px(g, rivet, right ? ox + 6 : ox + 1, bottom ? oy + 6 : oy + 1, 2, 2);
-        }
+        px(g, shade(wood, -22), 3, 3, w - 6, 1);
+        int rivet = disabled ? 0xb0a090 : 0xffe6b0;
+        // Corner rivets stay inside the 3 px nine-slice border, so every button width keeps them.
+        for (int corner = 0; corner < 4; corner++) px(g, rivet, corner % 2 == 0 ? 2 : w - 3, corner / 2 == 0 ? 2 : h - 3, 1, 1);
         g.dispose();
         return image;
     }
@@ -363,48 +399,62 @@ class BuildEscMenu {
         System.out.println("ESC menu pack SHA1: " + hash + "; " + Files.size(zip) + " bytes");
     }
 
-    /** Simulates the 1.21 pause layout for the smallest, the common 1080p and a tall GUI height. */
-    static void preview(BufferedImage frame) throws Exception {
+    /**
+     * Simulates both pause layouts (1.21.4 and the 26.2+ icon row) at the smallest,
+     * the common 1080p and a tall GUI height. Icon sprites are read from an optional
+     * extracted client directory; without it the icon buttons stay plain.
+     */
+    static void preview(BufferedImage frame, BufferedImage iconFrame, Path icons) throws Exception {
         int[] heights = {240, 270, 360};
-        int scale = 2, gap = 12, total = heights.length * (360 * scale + gap);
-        BufferedImage preview = new BufferedImage(total, 360 * scale, BufferedImage.TYPE_INT_ARGB);
+        int scale = 2, gap = 12, panel = 360 * scale + gap, total = heights.length * panel;
+        BufferedImage preview = new BufferedImage(total, 2 * panel, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g = preview.createGraphics();
-        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-        px(g, 0x101418, 0, 0, total, 360 * scale);
-        BufferedImage normal = button(false, false), hover = button(true, false);
-        String[] labels = {null, "Gelişmeler", "İstatistikler", "Geri Bildirim", "Hata Bildir", "Ayarlar", "Oyuncu Bildir", "Sunucudan Ayrıl"};
-        BufferedImage text = text(LABEL);
-        int ox = 0;
-        for (int h : heights) {
-            int width = 360;
-            px(g, 0x2f3d33, ox, 0, width * scale, h * scale);
-            g.setColor(new Color(255, 255, 255, 140)); g.setFont(new Font("SansSerif", Font.BOLD, 14));
-            g.drawString("GUI height " + h, ox + 8, h * scale - 8);
-            int gridTop = (int)((h - 166) * 0.25f), top = gridTop + 50, cx = width / 2;
-            int frameTop = top - TOP;
-            for (int i = 0; i < BUTTONS.length; i++) {
-                int[] b = BUTTONS[i];
-                int bx = cx - CX + b[0], by = frameTop + b[1];
-                nine(g, i == 3 ? hover : normal, ox + bx * scale, by * scale, b[2] * scale, b[3] * scale, scale);
-                if (labels[i] != null) {
-                    int tx = bx + b[2] / 2 - width(labels[i]) / 2, ty = by + 6;
-                    drawText(g, labels[i], ox + (tx + 1) * scale, (ty + 1) * scale, scale, 0x3f3f3f);
-                    drawText(g, labels[i], ox + tx * scale, ty * scale, scale, 0xffffff);
-                }
-            }
-            // The frame is the first button's label: shadow first, then the glyphs.
-            BufferedImage shadow = tint(frame, 0x3f3f3f);
-            g.drawImage(shadow, ox + (cx - CX + 1) * scale, (frameTop + 1) * scale, W * scale, H * scale, null);
-            g.drawImage(frame, ox + (cx - CX) * scale, frameTop * scale, W * scale, H * scale, null);
-            int textAdvance = (int)(0.5 + text.getWidth() / 2.0) + 1;
-            g.drawImage(tint(text, 0x3f3f3f), ox + (cx - textAdvance / 2 + 1) * scale, (top + 7) * scale, text.getWidth() * scale / 2, 8 * scale, null);
-            g.drawImage(text, ox + (cx - textAdvance / 2) * scale, (top + 6) * scale, text.getWidth() * scale / 2, 8 * scale, null);
-            if (frameTop < 0 || frameTop + H > h) throw new IllegalStateException("Frame leaves a "+h+" px tall GUI");
-            px(g, 0x101418, ox, h * scale, width * scale, (360 - h) * scale);
-            ox += width * scale + gap;
+        px(g, 0x101418, 0, 0, total, 2 * panel);
+        String[] oldLabels = {null, "Gelişmeler", "İstatistikler", "Geri Bildirim", "Hata Bildir", "Ayarlar", "Oyuncu Bildir", "Sunucudan Ayrıl"};
+        String[] newLabels = {null, "Gelişmeler", "İstatistikler", "bug", "social_interactions", "friends", "player_reporting", "Ayarlar", "Dünya Seçenekleri...", "Sunucudan Ayrıl"};
+        for (int layout = 0; layout < 2; layout++) {
+            int[][] buttons = layout == 0 ? BUTTONS : ICON_BUTTONS;
+            String[] labels = layout == 0 ? oldLabels : newLabels;
+            for (int column = 0; column < heights.length; column++)
+                pausePanel(g, layout == 0 ? frame : iconFrame, buttons, labels, icons, heights[column], column * panel, layout * panel, scale,
+                    (layout == 0 ? "1.21.4" : "26.2+") + " - GUI " + heights[column]);
         }
         g.dispose();
         ImageIO.write(preview, "png", Path.of("art/esc-frame-preview.png").toFile());
+    }
+
+    static void pausePanel(Graphics2D g, BufferedImage frame, int[][] buttons, String[] labels, Path icons, int h, int ox, int oy, int scale, String caption) throws Exception {
+        int width = 360;
+        px(g, 0x2f3d33, ox, oy, width * scale, h * scale);
+        g.setColor(new Color(255, 255, 255, 140)); g.setFont(new Font("SansSerif", Font.BOLD, 14));
+        g.drawString(caption, ox + 8, oy + h * scale - 8);
+        int gridTop = (int)((h - 166) * 0.25f), top = gridTop + 50, cx = width / 2, frameTop = top - TOP;
+        BufferedImage normal = button(false, false), hover = button(true, false);
+        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+        for (int i = 0; i < buttons.length; i++) {
+            int[] b = buttons[i];
+            int bx = cx - CX + b[0], by = frameTop + b[1];
+            nine(g, i == 3 ? hover : normal, ox + bx * scale, oy + by * scale, b[2] * scale, b[3] * scale, scale);
+            if (labels[i] == null) continue;
+            Path icon = icons == null ? null : icons.resolve(labels[i].equals("friends") ? "friends/friends.png" : "pause_menu/" + labels[i] + ".png");
+            if (b[2] == 20) {
+                if (icon != null && Files.isRegularFile(icon)) g.drawImage(ImageIO.read(icon.toFile()), ox + (bx + 2) * scale, oy + (by + 2) * scale, 15 * scale, 15 * scale, null);
+                continue;
+            }
+            int tx = bx + b[2] / 2 - width(labels[i]) / 2, ty = by + 6;
+            drawText(g, labels[i], ox + (tx + 1) * scale, oy + (ty + 1) * scale, scale, 0x3f3f3f);
+            drawText(g, labels[i], ox + tx * scale, oy + ty * scale, scale, 0xffffff);
+        }
+        // The frame is the first button's label: shadow first, then the glyphs.
+        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        g.drawImage(tint(frame, 0x3f3f3f), ox + (cx - CX + 1) * scale, oy + (frameTop + 1) * scale, W * scale, H * scale, null);
+        g.drawImage(frame, ox + (cx - CX) * scale, oy + frameTop * scale, W * scale, H * scale, null);
+        BufferedImage text = text(LABEL);
+        int textAdvance = (int)(0.5 + text.getWidth() / 2.0) + 1;
+        g.drawImage(tint(text, 0x3f3f3f), ox + (cx - textAdvance / 2 + 1) * scale, oy + (top + 7) * scale, text.getWidth() * scale / 2, 8 * scale, null);
+        g.drawImage(text, ox + (cx - textAdvance / 2) * scale, oy + (top + 6) * scale, text.getWidth() * scale / 2, 8 * scale, null);
+        if (frameTop < 0 || frameTop + H > h) throw new IllegalStateException("Frame leaves a "+h+" px tall GUI");
+        px(g, 0x101418, ox, oy + h * scale, width * scale, (360 - h) * scale);
     }
 
     static BufferedImage tint(BufferedImage image, int rgb) {
@@ -416,12 +466,12 @@ class BuildEscMenu {
         return result;
     }
 
-    /** Nine-slice with border 4 and tiled edges, like the GUI sprite renderer. */
+    /** Nine-slice with the button border, cropping the centre like the GUI sprite renderer. */
     static void nine(Graphics2D g, BufferedImage sprite, int x, int y, int w, int h, int scale) {
-        int b = 4 * S, bs = 4 * scale;
+        int b = BUTTON_BORDER, bs = BUTTON_BORDER * scale;
         int sw = sprite.getWidth(), sh = sprite.getHeight();
         int innerW = w - 2 * bs;
-        int srcInnerW = Math.min(sw - 2 * b, innerW * S / scale), srcInnerH = sh - 2 * b;
+        int srcInnerW = Math.min(sw - 2 * b, innerW / scale), srcInnerH = sh - 2 * b;
         g.drawImage(sprite, x, y, x + bs, y + bs, 0, 0, b, b, null);
         g.drawImage(sprite, x + w - bs, y, x + w, y + bs, sw - b, 0, sw, b, null);
         g.drawImage(sprite, x, y + h - bs, x + bs, y + h, 0, sh - b, b, sh, null);
