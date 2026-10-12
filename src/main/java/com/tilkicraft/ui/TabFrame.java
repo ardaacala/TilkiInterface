@@ -1,35 +1,44 @@
 package com.tilkicraft.ui;
 
+import java.util.List;
+
 /**
- * Assembles the forest TAB frame from pack pieces. The vanilla list centres
- * zero-width header/footer lines on the screen centre, puts rows 9 px apart
- * below the header (at most 20 per column, columns 5 px apart) and draws the
- * footer right below the rows, so every piece is placed relative to the centre
- * with signed space glyphs and a per-row ascent. Rows, heads, names and ping
- * icons are drawn after the header, on top of the frame.
+ * Assembles the forest TAB frame from pack glyphs. The vanilla list centres each
+ * header/footer line on the screen centre, puts rows 9 px apart below the header (at
+ * most 20 per column, columns 5 px apart) and draws the footer right below the rows.
+ * The art lines have zero net width: signed space glyphs move the pen to each tile.
+ * Rows, heads, names and ping icons are drawn after the header, on top of the frame.
  */
-final class TabFrame {
-    static final int HEADER_ART_LINES = 6, COLUMN_GAP = 5, ROW = 9;
+public final class TabFrame {
+    static final int COLUMN_GAP = 5;
     private final HudLayout layout;
     private final char negative, positive;
-    private final int margin, maxRows;
+    private final int margin, maxRows, headerLines, titleLine, onlineLine, footerLines, footerTextLine;
 
-    TabFrame(HudLayout layout) {
+    public TabFrame(HudLayout layout) {
         this.layout = layout;
-        negative = (char)layout.number("tab.space.negative");
-        positive = (char)layout.number("tab.space.positive");
-        margin = layout.number("tab.interiorMargin");
+        negative = (char)layout.number("space.negative");
+        positive = (char)layout.number("space.positive");
+        margin = layout.number("tab.margin");
         maxRows = layout.number("tab.maxRows");
+        headerLines = layout.number("tab.headerLines");
+        titleLine = layout.number("tab.titleLine");
+        onlineLine = layout.number("tab.onlineLine");
+        footerLines = layout.number("tab.footerLines");
+        footerTextLine = layout.number("tab.footerTextLine");
     }
 
-    /** Column layout of the vanilla list for n entries. */
-    static int[] grid(int entries) {
+    /** Rows and columns of the vanilla list for n entries. */
+    public static int[] grid(int entries) {
         int rows = entries, cols = 1;
         while (rows > 20) { cols++; rows = (entries + cols - 1) / cols; }
         return new int[]{Math.max(1, rows), cols};
     }
 
-    static int slotWidth(int nameWidth, boolean heads) { return (heads ? 9 : 0) + nameWidth + 13; }
+    public static int slotWidth(int nameWidth, boolean heads) { return (heads ? 9 : 0) + nameWidth + 13; }
+
+    /** The frame art matches this name width (TilkiTags pads TAB names to it). */
+    public int nameWidth() { return layout.number("tab.nameWidth"); }
 
     /** Writes glyphs at absolute x positions relative to the line centre. */
     private final class Pen {
@@ -42,53 +51,44 @@ final class TabFrame {
             for (int bit = 7; bit >= 0; bit--) while (left >= (1 << bit)) { out.append((char)(base + bit)); left -= 1 << bit; }
             x = to;
         }
-        void put(HudLayout.Piece piece, int at) { move(at); out.append(piece.glyph()); x += piece.width() + 1; }
-        void tile(HudLayout.Piece piece, int from, int to) {
-            for (int at = from; at < to; at += piece.width()) put(piece, Math.min(at, to - piece.width()));
+        void put(List<HudLayout.Tile> tiles, int origin) {
+            for (HudLayout.Tile tile : tiles) { move(origin + tile.x()); out.append(tile.glyph()); x += tile.width() + 1; }
         }
         String close() { move(0); return out.toString(); }
     }
 
-    private int total(int cols, int slot) { return cols * slot + (cols - 1) * COLUMN_GAP; }
+    private static int total(int cols, int slot) { return cols * slot + (cols - 1) * COLUMN_GAP; }
+    private int interiorLeft(int cols, int slot) { return -(total(cols, slot) / 2) - margin; }
+    private static String variant(int cols, boolean heads) { return Math.min(4, cols) + "." + (heads ? 1 : 0); }
 
-    /** Header: art line, blank lines over the art, then the server title and the online count on the sign. */
-    String header(int entries, int slot, String title, String online) {
-        int[] grid = grid(entries);
-        int rows = Math.min(grid[0], maxRows), total = total(grid[1], slot);
-        int left = -(total / 2) - margin, right = -(total / 2) + total + margin;
-        Pen pen = new Pen();
-        pen.tile(layout.piece("canopy"), left - 20, right + 18);
-        pen.tile(layout.piece("beam_tile"), left, right);
-        pen.put(layout.piece("beam_left"), left - 26);
-        pen.put(layout.piece("beam_right"), right);
-        HudLayout.Piece crest = layout.piece("crest");
-        pen.put(crest, -crest.width() / 2);
-        pen.tile(layout.piece("head_wood"), left, right);
-        pen.put(layout.piece("head_post_left"), left - 20);
-        pen.put(layout.piece("head_post_right"), right);
-        HudLayout.Piece sign = layout.piece("sign");
-        pen.put(sign, -sign.width() / 2);
-        for (int r = 0; r < rows; r++) {
-            pen.tile(layout.piece("row_wood." + r), left, right);
-            pen.put(layout.piece("row_post_left." + r), left - 20);
-            pen.put(layout.piece("row_post_right." + r), right);
+    /** Lines of the given count; the art goes on the first, texts on their lines. */
+    private static String lines(int count, String art, int[] at, String... texts) {
+        StringBuilder out = new StringBuilder(art);
+        for (int line = 1; line < count; line++) {
+            out.append('\n');
+            String text = " ";
+            for (int i = 0; i < at.length; i++) if (at[i] == line) text = texts[i];
+            out.append(text);
         }
-        return pen.close() + "\n".repeat(HEADER_ART_LINES) + title + "\n" + online;
+        return out.toString();
     }
 
-    /** Footer: art line, then the welcome and command lines on the bottom sign. */
-    String footer(int entries, int slot, String welcome, String links) {
-        int total = total(grid(entries)[1], slot);
-        int left = -(total / 2) - margin, right = -(total / 2) + total + margin;
+    /** Header: posts for the current row count, top beam with corners and the fox sign, title and online count. */
+    public String header(int entries, boolean heads, String title, String online) {
+        int[] grid = grid(entries);
+        int rows = Math.min(grid[0], maxRows), slot = slotWidth(nameWidth(), heads), cols = grid[1];
+        int left = interiorLeft(cols, slot), right = left + total(cols, slot) + 2 * margin;
         Pen pen = new Pen();
-        pen.tile(layout.piece("foot_wood"), left, right);
-        pen.put(layout.piece("foot_post_left"), left - 20);
-        pen.put(layout.piece("foot_post_right"), right);
-        HudLayout.Piece sign = layout.piece("foot_sign");
-        pen.put(sign, -sign.width() / 2);
-        pen.tile(layout.piece("foot_tile"), left, right);
-        pen.put(layout.piece("foot_left"), left - 26);
-        pen.put(layout.piece("foot_right"), right);
-        return pen.close() + "\n" + welcome + "\n" + links;
+        pen.put(layout.tiles("tab.post.left." + rows), left);
+        pen.put(layout.tiles("tab.post.right." + rows), right);
+        pen.put(layout.tiles("tab.header." + variant(cols, heads)), 0);
+        return lines(headerLines, pen.close(), new int[]{titleLine, onlineLine}, title, online);
+    }
+
+    /** Footer: bottom beam with corners and the support sign, then the text line. */
+    public String footer(int entries, boolean heads, String text) {
+        Pen pen = new Pen();
+        pen.put(layout.tiles("tab.footer." + variant(grid(entries)[1], heads)), 0);
+        return lines(footerLines, pen.close(), new int[]{footerTextLine}, text);
     }
 }

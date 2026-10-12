@@ -23,6 +23,42 @@ public final class UiText {
         try { return (int)tags.getClass().getMethod("getTabNameWidth").invoke(tags); }
         catch (ReflectiveOperationException | ClassCastException ex) { return 0; }
     }
+    /** "&#RRGGBB" to the §x§R§R§G§G§B§B form that Spigot sends as a hex colour. */
+    public static String hexColors(String text) {
+        if (text == null) return null;
+        return java.util.regex.Pattern.compile("&#([0-9a-fA-F]{6})").matcher(text).replaceAll(match -> {
+            StringBuilder out = new StringBuilder("§x");
+            for (char c : match.group(1).toCharArray()) out.append('§').append(c);
+            return out.toString();
+        });
+    }
+    /**
+     * Client width of a formatted line: pack glyphs from the layout (sidebar icons), the
+     * rest measured by TilkiTags (its widths match the TilkiCraft font) or estimated.
+     */
+    public static int width(String text, HudLayout layout, Object tags) {
+        StringBuilder rest = new StringBuilder();
+        int glyphs = 0;
+        for (char c : text.toCharArray()) {
+            if (layout != null && layout.has("advance." + (int)c)) glyphs += layout.number("advance." + (int)c);
+            else rest.append(c);
+        }
+        if (tags != null) try { return glyphs + (int)tags.getClass().getMethod("getTextWidth", String.class).invoke(tags, rest.toString()); }
+        catch (ReflectiveOperationException | ClassCastException ignored) { }
+        return glyphs + tabNameWidth(rest.toString());
+    }
+    /** Cuts a formatted line to the given width, ending with "..". */
+    public static String fit(String text, int pixels, java.util.function.ToIntFunction<String> measure) {
+        if (measure.applyAsInt(text) <= pixels) return text;
+        StringBuilder fitted = new StringBuilder();
+        for (int i = 0; i < text.length();) {
+            if (text.charAt(i) == '§' && i + 1 < text.length()) { fitted.append(text, i, i + 2); i += 2; continue; }
+            int cp = text.codePointAt(i); String next = new String(Character.toChars(cp));
+            if (measure.applyAsInt(fitted + next + "§r..") > pixels) break;
+            fitted.append(next); i += Character.charCount(cp);
+        }
+        return fitted + "§r..";
+    }
     public static String pixelSpace(int pixels) { return String.valueOf((char)(0xee40+Math.max(0,Math.min(192,pixels)))); }
     public static String fit(String text,int pixels) {
         if(tabNameWidth(text)<=pixels)return text;

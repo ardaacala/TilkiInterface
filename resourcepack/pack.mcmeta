@@ -1,1 +1,1 @@
-{"pack":{"description":"TilkiCraft - orange fox interface | 1.21.4 - 26.x","pack_format":46,"supported_formats":[46,999],"min_format":46,"max_format":999},"overlays":{"entries":[{"directory":"tilki_legacy","formats":[46,64],"min_format":46,"max_format":64},{"directory":"tilki_icon_menu","formats":[88,999],"min_format":88,"max_format":999}]}}
+{"pack":{"description":"TilkiCraft - forest fox interface | 1.21.4 - 26.x","pack_format":46,"supported_formats":[46,999],"min_format":46,"max_format":999}}

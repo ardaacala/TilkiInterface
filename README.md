@@ -80,6 +80,18 @@ ESC çerçevesinin alt kirişi bütün duraklatma menüsünü, “Bağlantıyı 
 
 TAB oyuncu listesi 1–80 görünür oyuncu için 1–4 sütun ve satır sayısına göre 42 farklı geometriden uygun olanı seçer. TilkiCraft logosu üst kirişe bağlıdır; orta alan şeffaftır. Paket üretim zincirinin son adımları `BuildOptionsTheme`, `BuildEscFrame` ve `BuildTabFrame` araçlarıdır. [ESC önizlemesi](art/esc-frame-preview.png) ile [TAB önizlemesi](art/tab-frame-preview.png) tasarım kontrolüdür.
 
+## 1.6.0 — Ayrık tasarım parçalarından arayüz (UI v3)
+
+Tüm arayüz yalnızca [`art/source`](art/source) içindeki ayrı, yazısız parçalardan üretilir. `art/source/reference` içindeki tam ekran görseller sadece yerleşim referansıdır ve kesilmez. Kaynak dosyalar değiştirilmez. Türetilen parçalar, kaynak koordinatları, ölçekler, çapalar ve nine-slice sınırları [`art/derived/manifest.md`](art/derived/manifest.md) dosyasında listelenir.
+
+- **ESC:** Köşe modülleri `esc_frame_reference.png` dosyasının yapraksız satır/sütunlarından kesilir. Düz kenarlar `edge_*.png` şeritleriyle doldurulur ve şeritler yalnızca yapraksız çizgilerden kesilir. Üstte tilkili tabela bulunur; `TilkiCraft` başlığı gerçek font glifi, kalın ve krem renktir. Altta `Destek: /discord` tabelası vardır. Çerçeve “Oyuna Dön” etiketine bağlıdır. 1.21.4 ve 26.3 düzenlerinde 240 GUI yüksekliğinden itibaren ekrana sığar. 26.2+ overlay'i kaldırıldı: yeni çerçevede simge satırı için delik gerekmez.
+- **Düğmeler:** `button_normal.png` / `button_hover.png` kendi sınırlarından kesilir, 7 px uçlar korunur. Devre dışı durum için yeni sette dosya yoktur; UI kitindeki taş düğme kullanılır.
+- **İstatistik paneli:** `hud_frame_narrow.png` ince nine-slice çerçeve (4 px) ve küçük TilkiCraft logosu kullanılır. Çerçeve yüksekliği satır sayısına göre seçilir. Boş satırlar `separator.png` ayırıcısına dönüşür, satırlar 120 px'e sığdırılır.
+- **TAB:** Köşeler `tab_frame_reference.png` dosyasından alınır. Üst ve alt kiriş ile direkler kenar şeritlerinden oluşur. Direkler her satır sayısı (1–20) için ayrı, yaprağı kesilmeyen dolgulardır. Tilkili tabelada `SKYBLOCK` başlığı, altında çevrimiçi sayısı bulunur. Alt tabela `tab.links` satırını taşır (`tab.welcome` kaldırıldı). Ping simgeleri UI kitinin sinyal ikonlarıdır.
+- **Önizlemeler:** [`art/derived/previews`](art/derived/previews) gerçek boyutludur. 1.21.4/26.3 ESC'yi 5 çözünürlük/GUI ölçeğinde, 6/12/34/75 oyunculu TAB'ı ve paneli gösterir. Ayrıca 4× kenar döşeme kontrolleri içerir. Bunlar vanilla yerleşim kodunun simülasyonudur, oyun içi ekran görüntüsü değildir.
+- **Sınır:** Vanilla, TAB listesi ekrandan genişse sütunları daraltır (`ekran genişliği − 50`). Çerçeve bu durumda hizalanamaz. Kafalarla gereken GUI genişliği: 1 sütun 212, 2 sütun 379, 3 sütun 546, 4 sütun 713 (1080p'de GUI 4 = 480, GUI 3 = 640, GUI 2 = 960).
+- Üretim: `javac -encoding UTF-8 -cp gson -d target/uitools tools/BuildShared.java tools/BuildUiV3.java tools/Previews.java src/main/java/com/tilkicraft/ui/HudLayout.java src/main/java/com/tilkicraft/ui/TabFrame.java`, ardından `java -cp gson;target/uitools BuildUiV3 ../TilkiResourcePack/overlay/assets/minecraft/textures/font/ascii.png`. 26.3 simge önizlemeleri için isteğe bağlı olarak `-Dvanilla.sprites=<açılmış gui/sprites>` verilir. Kontrol: `tools/ValidatePack.ps1`.
+
 ## 1.5.0 — Orman temalı ESC, TAB ve istatistik paneli
 
 - **ESC:** Çerçeve [orman tasarımından](art/esc-menu-reference-v2.png) birebir alınır (yapraklı direkler, fenerler, tilkiler, `Destek: /discord`). 1x piksel-art'tır ve tek glif olarak 1.21.4 ile 26.2+ düzenlerinde düğmelere bağlıdır. Düğmeler [UI kitinin](art/ui-kit.png) perçinli ahşap düğmeleridir. [Önizleme](art/esc-frame-preview.png)

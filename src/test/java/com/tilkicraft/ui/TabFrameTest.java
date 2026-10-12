@@ -7,9 +7,9 @@ import static org.junit.jupiter.api.Assertions.*;
 class TabFrameTest {
     private final HudLayout layout = Objects.requireNonNull(HudLayout.load(), "hud-layout.properties");
 
-    /** Advance of the first (art) line: pieces advance width+1, space glyphs ±2^k. */
+    /** Advance of an art line: tiles advance width+1, space glyphs ±2^k. */
     private int advance(String line, Map<Character, Integer> widths) {
-        char negative = (char)layout.number("tab.space.negative"), positive = (char)layout.number("tab.space.positive");
+        char negative = (char)layout.number("space.negative"), positive = (char)layout.number("space.positive");
         int total = 0;
         for (char c : line.toCharArray()) {
             if (c >= negative && c < negative + 8) total -= 1 << (c - negative);
@@ -19,13 +19,13 @@ class TabFrameTest {
         return total;
     }
 
+    /** Widths of every TAB art tile in the layout. */
     private Map<Character, Integer> widths() throws Exception {
         Properties values = new Properties();
         try (var in = getClass().getResourceAsStream("/hud-layout.properties")) { values.load(new java.io.InputStreamReader(in, java.nio.charset.StandardCharsets.UTF_8)); }
         Map<Character, Integer> widths = new HashMap<>();
-        for (String key : values.stringPropertyNames()) if (key.startsWith("piece.")) {
-            String[] parts = values.getProperty(key).split(",");
-            widths.put((char)Integer.parseInt(parts[0]), Integer.parseInt(parts[1]));
+        for (String key : values.stringPropertyNames()) if (key.startsWith("tab.") && values.getProperty(key).contains(",")) {
+            for (HudLayout.Tile tile : layout.tiles(key)) widths.put(tile.glyph(), tile.width());
         }
         return widths;
     }
@@ -34,13 +34,22 @@ class TabFrameTest {
         TabFrame frame = new TabFrame(layout);
         Map<Character, Integer> widths = widths();
         for (int entries : new int[]{1, 2, 9, 20, 21, 40, 41, 60, 61, 80}) for (boolean heads : new boolean[]{true, false}) {
-            int slot = TabFrame.slotWidth(140, heads);
-            String header = frame.header(entries, slot, "T", "O"), footer = frame.footer(entries, slot, "W", "L");
-            assertEquals(0, advance(header.split("\n", -1)[0], widths), "header " + entries);
-            assertEquals(0, advance(footer.split("\n", -1)[0], widths), "footer " + entries);
-            // Art line, five blank lines, then the title and online lines on the sign.
-            assertEquals(TabFrame.HEADER_ART_LINES + 2, header.split("\n", -1).length);
-            assertEquals(layout.number("tab.headerLines"), header.split("\n", -1).length);
+            String header = frame.header(entries, heads, "T", "O"), footer = frame.footer(entries, heads, "L");
+            String[] headerLines = header.split("\n", -1), footerLines = footer.split("\n", -1);
+            assertEquals(0, advance(headerLines[0], widths), "header " + entries);
+            assertEquals(0, advance(footerLines[0], widths), "footer " + entries);
+            assertEquals(layout.number("tab.headerLines"), headerLines.length);
+            assertEquals("T", headerLines[layout.number("tab.titleLine")]);
+            assertEquals("O", headerLines[layout.number("tab.onlineLine")]);
+            assertEquals(layout.number("tab.footerLines"), footerLines.length);
+            assertEquals("L", footerLines[layout.number("tab.footerTextLine")]);
+        }
+    }
+
+    @Test void postsExistForEveryRowCount() {
+        for (int rows = 1; rows <= layout.number("tab.maxRows"); rows++) {
+            assertFalse(layout.tiles("tab.post.left." + rows).isEmpty());
+            assertFalse(layout.tiles("tab.post.right." + rows).isEmpty());
         }
     }
 
@@ -50,8 +59,13 @@ class TabFrameTest {
         assertArrayEquals(new int[]{20, 4}, TabFrame.grid(80));
     }
 
-    @Test void sidebarTitleIsTheZeroWidthLogo() {
-        String title = layout.text("sidebar.title");
-        assertEquals(3, title.length());
+    @Test void sidebarTitlesHaveFrameAndLogoForEveryLineCount() {
+        char negative = (char)layout.number("space.negative"), positive = (char)layout.number("space.positive");
+        for (int lines = 1; lines <= layout.number("sidebar.maxLines"); lines++) {
+            int glyphs = 0;
+            for (char c : layout.text("sidebar.title." + lines).toCharArray()) if (c < negative || c >= positive + 8) glyphs++;
+            assertTrue(glyphs >= 2, "frame and logo glyphs for " + lines + " lines");
+        }
+        assertTrue(layout.number("sidebar.content") < layout.number("sidebar.width"));
     }
 }

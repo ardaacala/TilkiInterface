@@ -3,12 +3,13 @@ package com.tilkicraft.ui;
 import java.io.*;
 import java.util.*;
 
-/** Glyph characters and sizes written by tools/BuildHudTab.java (hud-layout.properties). */
-final class HudLayout {
-    record Piece(char glyph, int width) {}
+/** Glyph characters and positions written by tools/BuildUiV3.java (hud-layout.properties). */
+public final class HudLayout {
+    /** One art glyph: its character, x position (GUI px) and width. */
+    public record Tile(char glyph, int x, int width) {}
     private final Properties values = new Properties();
 
-    HudLayout(InputStream in) throws IOException { values.load(new InputStreamReader(in, java.nio.charset.StandardCharsets.UTF_8)); }
+    public HudLayout(InputStream in) throws IOException { values.load(new InputStreamReader(in, java.nio.charset.StandardCharsets.UTF_8)); }
 
     static HudLayout load() {
         try (InputStream in = HudLayout.class.getResourceAsStream("/hud-layout.properties")) {
@@ -16,11 +17,18 @@ final class HudLayout {
         } catch (IOException ex) { return null; }
     }
 
-    int number(String key) { return Integer.parseInt(Objects.requireNonNull(values.getProperty(key), key)); }
-    String text(String key) { return Objects.requireNonNull(values.getProperty(key), key); }
-    char icon(String name) { return (char)number("icon." + name); }
-    Piece piece(String key) {
-        String[] parts = Objects.requireNonNull(values.getProperty("piece." + key), key).split(",");
-        return new Piece((char)Integer.parseInt(parts[0]), Integer.parseInt(parts[1]));
+    public boolean has(String key) { return values.containsKey(key); }
+    public int number(String key) { return Integer.parseInt(Objects.requireNonNull(values.getProperty(key), key)); }
+    public String text(String key) { return Objects.requireNonNull(values.getProperty(key), key); }
+    public char icon(String name) { return (char)number("icon." + name); }
+    /** Tiles stored as "glyph,x,width;..." */
+    public List<Tile> tiles(String key) {
+        List<Tile> tiles = new ArrayList<>();
+        for (String part : text(key).split(";")) {
+            if (part.isEmpty()) continue;
+            String[] p = part.split(",");
+            tiles.add(new Tile((char)Integer.parseInt(p[0]), Integer.parseInt(p[1]), Integer.parseInt(p[2])));
+        }
+        return tiles;
     }
 }

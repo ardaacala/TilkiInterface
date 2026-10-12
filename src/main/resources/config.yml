@@ -31,16 +31,17 @@ tab:
   style: frame
   # auto: sunucu online-mode ise oyuncu kafaları için 9 px eklenir. true/false ile zorlanabilir.
   show-heads: auto
-  title: '&6&lSKYBLOCK'
+  # Başlıklar krem rengi kalın; &#RRGGBB hex renk desteklenir.
+  title: '&#FFE9C2&lSKYBLOCK'
   online: '&fÇevrimiçi: &a{online} &8/ &f{max}'
-  welcome: '&fHoş geldin!'
+  # Alt tabeladaki tek satır (yaklaşık 115 px sığar).
   links: '&6/discord &8• &6/kurallar'
 top-bar:
   enabled: true
   text: '&6◆ &f{money} &8┃ {rank} &8┃ &6TilkiCraft &8┃ &f{online}/{max}'
 pack:
-  url: 'https://github.com/ardaacala/TilkiInterface/releases/download/v1.5.0/TilkiInterface-ResourcePack.zip'
-  sha1: '09c73d71ec7fbb04d649a89132d567c35eb08df5'
+  url: 'https://github.com/ardaacala/TilkiInterface/releases/download/v1.6.0/TilkiInterface-ResourcePack.zip'
+  sha1: 'c274118744ab3ca09cf448f2cd4bb83834462066'
   required: false
   delay-ticks: 100
   prompt: 'TilkiCraft logo ve menü temasını yükle.'

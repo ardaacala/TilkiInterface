@@ -167,10 +167,16 @@ public final class TilkiInterface extends JavaPlugin implements Listener, Comman
             getConfig().set("sidebar.lines",getConfig().getStringList("sidebar.lines").stream().map(line->line.equals("{footer}")?"{icon-fox} {footer}":line).toList());
             getConfig().set("layout.forest-hud-v9",true);saveConfig();
         }
+        if (!getConfig().getBoolean("layout.forest-ui-v10",false)) {
+            // Headings are bold cream; the TAB footer has a single text line on the support sign.
+            if ("&6&lSKYBLOCK".equals(getConfig().getString("tab.title"))) getConfig().set("tab.title","&#FFE9C2&lSKYBLOCK");
+            getConfig().set("tab.welcome",null);
+            getConfig().set("layout.forest-ui-v10",true);saveConfig();
+        }
         String previousUrl=getConfig().getString("pack.url","");
-        if (previousUrl.startsWith("https://github.com/ardaacala/TilkiInterface/releases/download/") && !previousUrl.contains("/v1.5.0/")) {
-            getConfig().set("pack.url","https://github.com/ardaacala/TilkiInterface/releases/download/v1.5.0/TilkiInterface-ResourcePack.zip");
-            getConfig().set("pack.sha1","09c73d71ec7fbb04d649a89132d567c35eb08df5"); saveConfig();
+        if (previousUrl.startsWith("https://github.com/ardaacala/TilkiInterface/releases/download/") && !previousUrl.contains("/v1.6.0/")) {
+            getConfig().set("pack.url","https://github.com/ardaacala/TilkiInterface/releases/download/v1.6.0/TilkiInterface-ResourcePack.zip");
+            getConfig().set("pack.sha1","c274118744ab3ca09cf448f2cd4bb83834462066"); saveConfig();
         }
         url=getConfig().getString("pack.url","").trim(); hash=null;
         if (url.isEmpty()) return;
@@ -240,7 +246,7 @@ public final class TilkiInterface extends JavaPlugin implements Listener, Comman
     }
     private String render(Player player,String text,Map<String,String> values) {
         for (var value:values.entrySet()) text=text.replace("{"+value.getKey()+"}",value.getValue());
-        return ChatColor.translateAlternateColorCodes('&',expand(player,text,text));
+        return ChatColor.translateAlternateColorCodes('&',UiText.hexColors(expand(player,text,text)));
     }
     private void refresh() {
         for (Player player:Bukkit.getOnlinePlayers()) {
@@ -259,13 +265,13 @@ public final class TilkiInterface extends JavaPlugin implements Listener, Comman
                 values.put("tab-logo","");
                 Object tags=tilkiTags();
                 int nameWidth=UiText.fixedTabNameWidth(tags);
-                if (ready.contains(id) && tabFrame!=null && nameWidth>0 && "frame".equalsIgnoreCase(getConfig().getString("tab.style","frame"))) {
-                    // The frame matches TilkiTags' fixed-width names; heads add 9 px in online mode.
+                if (ready.contains(id) && tabFrame!=null && nameWidth==tabFrame.nameWidth() && "frame".equalsIgnoreCase(getConfig().getString("tab.style","frame"))) {
+                    // The frame art is built for TilkiTags' fixed-width names; heads add 9 px in online mode.
                     int entries=(int)Math.min(80,Bukkit.getOnlinePlayers().stream().filter(player::canSee).count());
                     String heads=getConfig().getString("tab.show-heads","auto");
-                    int slot=TabFrame.slotWidth(nameWidth,heads.equalsIgnoreCase("auto")?Bukkit.getOnlineMode():Boolean.parseBoolean(heads));
-                    panel.lastHeader=tabFrame.header(entries,slot,render(player,getConfig().getString("tab.title","&6&lSKYBLOCK"),values),render(player,getConfig().getString("tab.online","&fÇevrimiçi: &a{online} &8/ &f{max}"),values));
-                    panel.lastFooter=tabFrame.footer(entries,slot,render(player,getConfig().getString("tab.welcome","&fHoş geldin!"),values),render(player,getConfig().getString("tab.links","&6/discord &8• &6/kurallar"),values));
+                    boolean showHeads=heads.equalsIgnoreCase("auto")?Bukkit.getOnlineMode():Boolean.parseBoolean(heads);
+                    panel.lastHeader=tabFrame.header(entries,showHeads,render(player,getConfig().getString("tab.title","&#FFE9C2&lSKYBLOCK"),values),render(player,getConfig().getString("tab.online","&fÇevrimiçi: &a{online} &8/ &f{max}"),values));
+                    panel.lastFooter=tabFrame.footer(entries,showHeads,render(player,getConfig().getString("tab.links","&6/discord &8• &6/kurallar"),values));
                 } else {
                     String header=String.join("\n",getConfig().getStringList("tab.header"));
                     String footer=String.join("\n",getConfig().getStringList("tab.footer"));
@@ -277,11 +283,15 @@ public final class TilkiInterface extends JavaPlugin implements Listener, Comman
             }
             if (panel.objective!=null) {
                 List<String> lines=getConfig().getStringList("sidebar.lines");
-                boolean framed=ready.contains(id) && layout!=null;
-                // Zero-width title glyph: the small logo is centred above the see-through panel.
-                panel.objective.setDisplayName(framed?"§f"+layout.text("sidebar.title"):render(player,getConfig().getString("sidebar.title","TilkiCraft"),values));
+                boolean framed=ready.contains(id) && layout!=null && layout.has("sidebar.title.1");
+                int count=Math.max(1,Math.min(panel.rows.size(),framed?layout.number("sidebar.maxLines"):13));
+                // The title glyphs are the narrow frame (sized to the line count) and the small logo;
+                // their advance fixes the panel width, so every line is fitted to the content width.
+                panel.objective.setDisplayName(framed?"§f"+layout.text("sidebar.title."+count):render(player,getConfig().getString("sidebar.title","TilkiCraft"),values));
+                Object tags=tilkiTags();
                 for (int i=0;i<panel.rows.size();i++) {
                     String line=i<lines.size()?render(player,lines.get(i),values):"";
+                    if (framed) line=ChatColor.stripColor(line).isBlank()?"§f"+layout.text("sidebar.separator"):UiText.fit(line,layout.number("sidebar.content"),text->UiText.width(text,layout,tags));
                     panel.rows.get(i).setPrefix(line);
                 }
             }
